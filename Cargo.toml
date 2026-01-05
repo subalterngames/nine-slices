@@ -1,0 +1,12 @@
+[package]
+name = "nine-slice"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+blittle = { path = "../blittle" }
+fast_image_resize = "5.5.0"
+serde = { version = "1", features = ["derive"], optional = true}
+
+[features]
+serde = ["dep:serde"]
