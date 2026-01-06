@@ -4,9 +4,11 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-blittle = { path = "../blittle" }
+blittle = "0.4.0"
+bytemuck = "1.24.0"
 fast_image_resize = "5.5.0"
 serde = { version = "1", features = ["derive"], optional = true}
+thiserror = "2.0.17"
 
 [features]
 serde = ["dep:serde"]

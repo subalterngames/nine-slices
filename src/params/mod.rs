@@ -1,12 +1,12 @@
 mod outer;
 mod rect;
 mod scale;
-mod scale_method;
+mod border;
 
 pub use outer::OuterArea;
 pub use rect::Rect;
 pub use scale::Scale;
-pub use scale_method::ScaleMethod;
+pub use border::Border;
 
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 #[derive(Clone, Debug)]
@@ -15,7 +15,7 @@ pub struct Params {
     pub inner: Rect,
     pub horizontal: Option<Scale>,
     pub vertical: Option<Scale>,
-    pub method: ScaleMethod,
+    pub method: Border,
 }
 
 impl Params {
@@ -24,21 +24,20 @@ impl Params {
         inner: Rect,
         horizontal: Option<Scale>,
         vertical: Option<Scale>,
-        method: ScaleMethod,
+        method: Border,
     ) -> Option<Self> {
+        let size = outer.size();
         // Is `inner` contained by `outer`?
-        if match &outer {
+        if inner.position.x > 0 && inner.position.y > 0 && inner.position.x + inner.size.w < size.w && inner.position.y + inner.size.h < size.h && match &outer {
             OuterArea::Rect(rect) => {
                 inner.position.x >= rect.position.x
                     && inner.position.y >= rect.position.y
-                    && inner.position.x + inner.size.w < rect.size.w
-                    && inner.position.y + inner.size.h < rect.size.h
             }
-            OuterArea::Size(size) => {
-                inner.position.x + inner.size.w < size.w && inner.position.y + inner.size.h < size.h
+            OuterArea::Size(_) => {
+                true
             }
         } {
-            if horizontal.is_some() || vertical.is_some() {
+            if (horizontal.is_some() || vertical.is_some())  {
                 Some(Self {
                     outer,
                     inner,
@@ -73,7 +72,7 @@ mod tests {
                 inner,
                 Some(Scale::To(300)),
                 None,
-                ScaleMethod::default()
+                Border::default()
             )
             .is_some()
         );
@@ -83,11 +82,11 @@ mod tests {
                 inner,
                 Some(Scale::To(300)),
                 Some(Scale::By(0.5)),
-                ScaleMethod::default()
+                Border::default()
             )
             .is_some()
         );
-        assert!(Params::new_checked(outer, inner, None, None, ScaleMethod::default()).is_none());
+        assert!(Params::new_checked(outer, inner, None, None, Border::default()).is_none());
 
         let outer_rect = OuterArea::Rect(Rect {
             position: PositionU { x: 2, y: 2 },
@@ -99,7 +98,7 @@ mod tests {
                 inner,
                 Some(Scale::To(300)),
                 None,
-                ScaleMethod::default()
+                Border::default()
             )
             .is_some()
         );
@@ -114,7 +113,7 @@ mod tests {
                 inner_bad,
                 Some(Scale::To(300)),
                 None,
-                ScaleMethod::default()
+                Border::default()
             )
             .is_none()
         );
@@ -126,7 +125,7 @@ mod tests {
                 inner,
                 Some(Scale::To(300)),
                 None,
-                ScaleMethod::default()
+                Border::default()
             )
             .is_none()
         );
@@ -137,7 +136,7 @@ mod tests {
                 inner_bad,
                 Some(Scale::To(300)),
                 None,
-                ScaleMethod::default()
+                Border::default()
             )
             .is_none()
         );
@@ -152,7 +151,7 @@ mod tests {
                 inner,
                 Some(Scale::To(300)),
                 None,
-                ScaleMethod::default()
+                Border::default()
             )
             .is_none()
         );
