@@ -6,5 +6,7 @@ edition = "2024"
 [dependencies]
 blittle = "0.4.0"
 bytemuck = "1.24.0"
-fast_image_resize = "5.5.0"
+fast_image_resize = { version = "5.5.0", features = ["image"] }
+glam = "0.30.9"
+image = "0.25.9"
 thiserror = "2.0.17"

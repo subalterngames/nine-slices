@@ -5,45 +5,67 @@ mod scale;
 mod sprite;
 mod bitmap;
 mod borders;
+mod corners;
 
+use std::io::Read;
 pub use bitmap::Bitmap;
 pub use blittle;
 use blittle::*;
 pub use border_scaling::BorderScaling;
 use bytemuck::cast_slice;
+use fast_image_resize::{CropBoxError, ImageViewMut, IntoImageView, IntoImageViewMut, PixelTrait};
+use fast_image_resize::images::CroppedImage;
 pub use error::Error;
-use fast_image_resize::Resizer;
-use fast_image_resize::images::Image;
+pub use fast_image_resize::images::Image;
+pub use glam::UVec2;
 pub use rect::Rect;
 pub use scale::Scale;
 pub use sprite::Sprite;
+pub use borders::Borders;
+use corners::*;
 
-pub struct NineSlicedSprite {
-    top_left: Bitmap,
-    top: Bitmap,
-    top_right: Bitmap,
-    right: Bitmap,
-    bottom_right: Bitmap,
-    bottom: Bitmap,
-    bottom_left: Bitmap,
-    left: Bitmap,
-    inner: Bitmap,
-    pixel_type: PixelType,
-    resizer: Resizer,
+pub struct NineSlicedSprite<'s> {
+    image: Image<'s>,
+    rect: Rect,
+    borders: Borders,
+    corners: Corners,
 }
 
-/*
-impl NineSlicedSprite {
-    pub fn new(sprite: Sprite, b) -> Self {
+
+impl<'s> NineSlicedSprite<'s> {
+    pub fn new_from_vec(buffer: Vec<u8>, borders: Borders, rect: Rect, pixel_type: PixelType) -> Result<Self, Error> {
+        let size = rect.image_size();
+        let image = Image::from_vec_u8(size.x, size.y, buffer, Self::convert_pixel_type(&pixel_type)).map_err(Error::FromVec)?;
+        let corners = Corners::new(&borders, &rect);
+        Ok(Self {
+            image,
+            rect,
+            borders,
+            corners
+        })
+    }
+
+    pub const fn new_from_image(image: Image<'s>, borders: Borders, rect: Rect) -> Self {
+        let corners = Corners::new(&borders, &rect);
         Self {
-            bitmap,
-            pixel_type,
-            params,
-            resizer: Resizer::new(),
+            image,
+            borders,
+            rect,
+            corners
         }
     }
 
-    pub fn resize(&self, size: Size) -> Result<Sprite, Error> {
+    pub fn resize(&self, width: u32, height: u32) -> Result<Image<'_>, Error> {
+        let mut dst = Image::new(width, height, self.image.pixel_type());
+    }
+
+    fn blit_corner<I: ImageViewMut>(src: &Image, dst: &mut Image, corner: Corner) -> Result<(), Error> {
+        let src = CroppedImage::new(src, corner.left, corner.top, corner.width, corner.height).map_err(Error::Corner)?;
+        src.borrow().
+        Ok(())
+    }
+
+   /* pub fn resize(&self, size: Size) -> Result<Sprite, Error> {
         let mut dst = self.get_dst(&size);
         let outer_size = *self.params.outer.size();
 
@@ -127,6 +149,17 @@ impl NineSlicedSprite {
             PixelType::Rgb32 => empty_f32(size, 3),
             PixelType::Rgba32 => empty_f32(size, 4),
         }
+    }*/
+
+    const fn convert_pixel_type(pixel_type: &PixelType) -> fast_image_resize::PixelType {
+        match pixel_type {
+            PixelType::Gr8 => fast_image_resize::PixelType::U8,
+            PixelType::GrA8 => fast_image_resize::PixelType::U8x2,
+            PixelType::Rgb8 => fast_image_resize::PixelType::U8x3,
+            PixelType::Rgba8 => fast_image_resize::PixelType::U8x4,
+            PixelType::Gr32 => fast_image_resize::PixelType::F32,
+            PixelType::Rgb32 => fast_image_resize::PixelType::F32x3,
+            PixelType::Rgba32 => fast_image_resize::PixelType::F32x4,
+        }
     }
 }
-*/
