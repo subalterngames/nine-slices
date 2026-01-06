@@ -1,15 +1,17 @@
-pub mod params;
-mod sprite;
+mod border;
 mod error;
+mod scale;
+mod sprite;
+mod axis;
 
-use crate::params::{Rect, Scale, Border};
+pub use border::Border;
 pub use blittle;
 use blittle::*;
 use bytemuck::cast_slice;
 use fast_image_resize::images::Image;
 use fast_image_resize::Resizer;
 pub use error::Error;
-use params::Params;
+pub use scale::Scale;
 pub use sprite::Sprite;
 
 pub struct NineSlicedSprite {

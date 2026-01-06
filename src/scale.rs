@@ -1,7 +1,10 @@
+/// How a dimension of the sprite is scaled.
 #[derive(Copy, Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub enum Scale {
+    /// Scale by this factor.
     By(f32),
+    /// Scale to this many pixels.
     To(usize),
 }
 
