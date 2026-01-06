@@ -6,8 +6,5 @@ use crate::Scale;
 pub enum Axis {
     Horizontal(Scale),
     Vertical(Scale),
-    Both {
-        horizontal: Scale,
-        vertical: Scale,
-    }
+    Both { horizontal: Scale, vertical: Scale },
 }

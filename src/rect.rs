@@ -1,5 +1,6 @@
 use blittle::*;
 
+/// A rectangular region.
 #[derive(Copy, Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct Rect {
