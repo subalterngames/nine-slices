@@ -1,14 +1,15 @@
-mod axis;
-mod border;
+mod border_scaling;
 mod error;
 mod rect;
 mod scale;
 mod sprite;
+mod bitmap;
+mod sliced_borders;
 
-pub use axis::Axis;
+pub use bitmap::Bitmap;
 pub use blittle;
 use blittle::*;
-pub use border::Border;
+pub use border_scaling::BorderScaling;
 use bytemuck::cast_slice;
 pub use error::Error;
 use fast_image_resize::Resizer;
@@ -18,15 +19,22 @@ pub use scale::Scale;
 pub use sprite::Sprite;
 
 pub struct NineSlicedSprite {
-    bitmap: Vec<u8>,
-    axis: Axis,
-    params: Params,
+    top_left: Bitmap,
+    top: Bitmap,
+    top_right: Bitmap,
+    right: Bitmap,
+    bottom_right: Bitmap,
+    bottom: Bitmap,
+    bottom_left: Bitmap,
+    left: Bitmap,
+    inner: Bitmap,
     pixel_type: PixelType,
     resizer: Resizer,
 }
 
+/*
 impl NineSlicedSprite {
-    pub fn new(bitmap: Vec<u8>, pixel_type: PixelType, params: Params) -> Self {
+    pub fn new(sprite: Sprite, b) -> Self {
         Self {
             bitmap,
             pixel_type,
@@ -121,3 +129,4 @@ impl NineSlicedSprite {
         }
     }
 }
+*/

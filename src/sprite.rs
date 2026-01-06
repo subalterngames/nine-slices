@@ -1,8 +1,8 @@
 use blittle::*;
+use crate::bitmap::Bitmap;
 
-/// A raw bitmap and its properties.
+/// A bitmap and a pixel type.
 pub struct Sprite {
-    pub bitmap: Vec<u8>,
-    pub pixel_type: PixelType,
+    pub bitmap: Bitmap,
     pub size: Size,
 }
