@@ -4,7 +4,7 @@ mod rect;
 mod scale;
 mod sprite;
 mod bitmap;
-mod sliced_borders;
+mod borders;
 
 pub use bitmap::Bitmap;
 pub use blittle;
