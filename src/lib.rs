@@ -66,18 +66,19 @@ impl<'s> NineSlicedSprite<'s> {
 
         // Resize and blit the inner area.
         self.resize_and_blit(
-            clipped_rect,
             &self.slices.inner(),
             width - (self.slices.left().size.w + self.slices.right().size.w) as u32,
             height - (self.slices.top().size.h + self.slices.bottom().size.h) as u32,
+            Size {
+                w: width as usize,
+                h: height as usize,
+            },
             dst_buffer,
         )?;
 
         match &self.border_scaling {
             BorderScaling::Repeat => todo!(),
-            BorderScaling::Stretch => {
-                self.stretch_edges(clipped_rect, width, height, dst_buffer)?
-            }
+            BorderScaling::Stretch => self.stretch_edges(width, height, dst_buffer)?,
         }
 
         Ok(dst)
@@ -89,29 +90,27 @@ impl<'s> NineSlicedSprite<'s> {
         blit(src, dst, &clipped_rect, &self.pixel_type.blittle);
     }
 
-    fn stretch_edges(
-        &mut self,
-        clipped_rect: ClippedRect,
-        width: u32,
-        height: u32,
-        dst: &mut [u8],
-    ) -> Result<(), Error> {
+    fn stretch_edges(&mut self, width: u32, height: u32, dst: &mut [u8]) -> Result<(), Error> {
+        let dst_size = Size {
+            w: width as usize,
+            h: height as usize,
+        };
         let top = self.slices.top();
-        self.resize_and_blit(clipped_rect, &top, width, top.size.h as u32, dst)?;
+        self.resize_and_blit(&top, width, top.size.h as u32, dst_size, dst)?;
         let right = self.slices.right();
-        self.resize_and_blit(clipped_rect, &right, right.size.w as u32, height, dst)?;
+        self.resize_and_blit(&right, right.size.w as u32, height, dst_size, dst)?;
         let bottom = self.slices.bottom();
-        self.resize_and_blit(clipped_rect, &bottom, width, bottom.size.h as u32, dst)?;
+        self.resize_and_blit(&bottom, width, bottom.size.h as u32, dst_size, dst)?;
         let left = self.slices.left();
-        self.resize_and_blit(clipped_rect, &left, left.size.w as u32, height, dst)
+        self.resize_and_blit(&left, left.size.w as u32, height, dst_size, dst)
     }
 
     fn resize_and_blit(
         &mut self,
-        clipped_rect: ClippedRect,
         rect: &Rect,
         width: u32,
         height: u32,
+        dst_size: Size,
         dst: &mut [u8],
     ) -> Result<(), Error> {
         // Resize.
@@ -126,15 +125,54 @@ impl<'s> NineSlicedSprite<'s> {
             .resize(&self.image, &mut resized, Some(&options))
             .map_err(Error::ResizeInner)?;
         // Blit.
-        let mut clipped_rect = clipped_rect;
-        clipped_rect.set_src_rect(
-            rect.position,
+        let clipped_rect = ClippedRect::new(
+            rect.position.into(),
+            dst_size,
             Size {
                 w: resized.width() as usize,
                 h: resized.height() as usize,
             },
+        )
+        .ok_or(Error::InvalidClippedRect)?;
+        blit(
+            resized.buffer(),
+            dst,
+            &clipped_rect,
+            &self.pixel_type.blittle,
         );
-        self.blit(resized.buffer(), dst, rect, &clipped_rect);
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use png::ColorType;
+    use std::fs::File;
+    use std::io::{BufWriter, Cursor};
+    use std::path::Path;
+
+    #[test]
+    fn test_resize() {
+        let decoder =
+            png::Decoder::new(Cursor::new(include_bytes!("../test_files/test_image.png")));
+        let mut reader = decoder.read_info().unwrap();
+        let mut buf = vec![0; reader.output_buffer_size().unwrap()];
+        let info = reader.next_frame(&mut buf).unwrap();
+        let bytes = buf[..info.buffer_size()].to_vec();
+
+        let image =
+            Image::from_vec_u8(512, 512, bytes, fast_image_resize::PixelType::U8x3).unwrap();
+        let slices = NineSlices::new(16, 16, 16, 16, Size { w: 512, h: 512 }).unwrap();
+        let mut n = NineSlicedSprite::new(image, slices, BorderScaling::Stretch).unwrap();
+        let width = 1024;
+        let height = 768;
+        let image = n.resize(width, height).unwrap();
+        let path = Path::new("test_files/resized.png");
+        let mut encoder =
+            png::Encoder::new(BufWriter::new(File::create(path).unwrap()), width, height);
+        encoder.set_color(ColorType::Rgb);
+        let mut writer = encoder.write_header().unwrap();
+        writer.write_image_data(image.buffer()).unwrap();
     }
 }
