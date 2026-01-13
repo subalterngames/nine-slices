@@ -156,12 +156,10 @@ impl NineSlices {
         size: &Size,
     ) -> bool {
         top > 0
-            && top < size.h - bottom
-            && right > 0
-            && right < size.w
-            && bottom > 0
-            && bottom < size.h
             && left > 0
+            && bottom > 0
+            && right > 0
+            && top < size.h - bottom
             && left < size.w - right
     }
 }
@@ -179,7 +177,8 @@ mod tests {
         assert!(!NineSlices::valid_borders(250, 2, 270, 2, &size));
         assert!(!NineSlices::valid_borders(250, 2, 250, 2, &size));
         assert!(!NineSlices::valid_borders(2, 500, 2, 2, &size));
-        assert!(NineSlices::valid_borders(2, 270, 2, 0, &size));
+        assert!(!NineSlices::valid_borders(2, 270, 2, 0, &size));
+        assert!(NineSlices::valid_borders(2, 270, 2, 1, &size));
         assert!(!NineSlices::valid_borders(2, 270, 2, 250, &size));
         assert!(!NineSlices::valid_borders(2, 250, 2, 250, &size));
     }
