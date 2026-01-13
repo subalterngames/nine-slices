@@ -3,6 +3,13 @@ use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum Error {
+    #[error("Invalid borders:\nleft: {left}\ntop: {top}\nright: {right}\nbottom: {bottom}")]
+    InvalidBorders {
+        left: usize,
+        top: usize,
+        right: usize,
+        bottom: usize,
+    },
     #[error("Failed to create an image from a vec: {0}")]
     FromVec(fast_image_resize::ImageBufferError),
     #[error("Error cropping inner area: {0}")]

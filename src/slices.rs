@@ -1,114 +1,145 @@
+use crate::{Error, Rect};
 use blittle::{PositionU, Size};
 
-pub struct Rect {
-    pub position: PositionU,
-    pub size: Size,
+pub struct NineSlices {
+    pub(crate) left: usize,
+    pub(crate) top: usize,
+    pub(crate) right: usize,
+    pub(crate) bottom: usize,
+    size: Size,
 }
 
-pub struct Slices {
-    pub top_left: Rect,
-    pub top: Rect,
-    pub top_right: Rect,
-    pub right: Rect,
-    pub bottom_right: Rect,
-    pub bottom: Rect,
-    pub bottom_left: Rect,
-    pub left: Rect,
-    pub inner: Rect,
-}
-
-impl Slices {
+impl NineSlices {
     pub const fn new(
         left: usize,
         top: usize,
-        bottom: usize,
         right: usize,
-        size: &Size,
-    ) -> Option<Self> {
-        if !Self::valid_borders(left, top, bottom, right, size) {
-            None
-        } else {
-            let top_left = Rect {
-                position: PositionU { x: 0, y: 0 },
-                size: Size { w: left, h: top },
-            };
-            let top_right = Rect {
-                position: PositionU {
-                    x: size.w - right,
-                    y: 0,
-                },
-                size: Size { w: right, h: top },
-            };
-            let bottom_right = Rect {
-                position: PositionU {
-                    x: size.w - right,
-                    y: size.h - bottom,
-                },
-                size: Size {
-                    w: right,
-                    h: bottom,
-                },
-            };
-            let bottom_left = Rect {
-                position: PositionU {
-                    x: 0,
-                    y: size.h - bottom,
-                },
-                size: Size { w: left, h: bottom },
-            };
-
-            let top_middle = Rect {
-                position: PositionU { x: left, y: 0 },
-                size: Size {
-                    w: size.w - (left + right),
-                    h: top,
-                },
-            };
-            let right_middle = Rect {
-                position: PositionU {
-                    x: size.w - right,
-                    y: top,
-                },
-                size: Size {
-                    w: right,
-                    h: size.h - (top + bottom),
-                },
-            };
-            let bottom_middle = Rect {
-                position: PositionU {
-                    x: left,
-                    y: size.h - bottom,
-                },
-                size: Size {
-                    w: size.w - (left + right),
-                    h: bottom,
-                },
-            };
-            let left_middle = Rect {
-                position: PositionU { x: 0, y: top },
-                size: Size {
-                    w: left,
-                    h: size.h - (top + bottom),
-                },
-            };
-            let inner = Rect {
-                position: PositionU { x: left, y: top },
-                size: Size {
-                    w: size.w - (left + right),
-                    h: size.h - (top + bottom),
-                },
-            };
-            Some(Self {
-                top_left,
-                top: top_middle,
-                top_right,
-                right: right_middle,
-                bottom_right,
-                bottom: bottom_middle,
-                bottom_left,
-                left: left_middle,
-                inner,
+        bottom: usize,
+        size: Size,
+    ) -> Result<Self, Error> {
+        if !Self::valid_borders(left, top, bottom, right, &size) {
+            Err(Error::InvalidBorders {
+                left,
+                top,
+                right,
+                bottom,
             })
+        } else {
+            Ok(Self {
+                left,
+                top,
+                right,
+                bottom,
+                size,
+            })
+        }
+    }
+
+    pub const fn inner(&self) -> Rect {
+        Rect {
+            position: PositionU {
+                x: self.left,
+                y: self.top,
+            },
+            size: Size {
+                w: self.size.w - (self.left + self.right),
+                h: self.size.h - (self.top + self.bottom),
+            },
+        }
+    }
+
+    pub const fn top_left(&self) -> Rect {
+        Rect {
+            position: PositionU { x: 0, y: 0 },
+            size: Size {
+                w: self.left,
+                h: self.top,
+            },
+        }
+    }
+
+    pub const fn top(&self) -> Rect {
+        Rect {
+            position: PositionU { x: self.left, y: 0 },
+            size: Size {
+                w: self.size.w - (self.left + self.right),
+                h: self.top,
+            },
+        }
+    }
+
+    pub const fn top_right(&self) -> Rect {
+        Rect {
+            position: PositionU {
+                x: self.size.w - self.right,
+                y: 0,
+            },
+            size: Size {
+                w: self.right,
+                h: self.top,
+            },
+        }
+    }
+
+    pub const fn right(&self) -> Rect {
+        Rect {
+            position: PositionU {
+                x: self.size.w - self.right,
+                y: self.top,
+            },
+            size: Size {
+                w: self.right,
+                h: self.size.h - (self.top + self.bottom),
+            },
+        }
+    }
+
+    pub const fn bottom_right(&self) -> Rect {
+        Rect {
+            position: PositionU {
+                x: self.size.w - self.right,
+                y: self.size.h - self.bottom,
+            },
+            size: Size {
+                w: self.right,
+                h: self.bottom,
+            },
+        }
+    }
+
+    pub const fn bottom(&self) -> Rect {
+        Rect {
+            position: PositionU {
+                x: self.left,
+                y: self.size.h - self.bottom,
+            },
+            size: Size {
+                w: self.size.w - (self.left + self.right),
+                h: self.bottom,
+            },
+        }
+    }
+
+    pub const fn bottom_left(&self) -> Rect {
+        Rect {
+            position: PositionU {
+                x: 0,
+                y: self.size.h - self.bottom,
+            },
+            size: Size {
+                w: self.left,
+                h: self.bottom,
+            },
+        }
+    }
+
+    pub const fn left(&self) -> Rect {
+        Rect {
+            position: PositionU { x: 0, y: self.top },
+            size: Size {
+                w: self.left,
+                h: self.size.h - (self.top + self.bottom),
+            },
         }
     }
 
@@ -120,19 +151,18 @@ impl Slices {
     const fn valid_borders(
         left: usize,
         top: usize,
-        bottom: usize,
         right: usize,
+        bottom: usize,
         size: &Size,
     ) -> bool {
-        top == 0
-            || right == 0
-            || bottom == 0
-            || left == 0
-            || top >= size.h - bottom
-            || top >= size.h
-            || right >= size.w
-            || bottom >= size.h
-            || left >= size.w - right
+        top > 0
+            && top < size.h - bottom
+            && right > 0
+            && right < size.w
+            && bottom > 0
+            && bottom < size.h
+            && left > 0
+            && left < size.w - right
     }
 }
 
@@ -143,14 +173,14 @@ mod tests {
     #[test]
     fn test_sliced_borders() {
         let size = Size { w: 400, h: 300 };
-        assert!(!Slices::valid_borders(0, 1, 2, 3, &size));
-        assert!(Slices::valid_borders(2, 2, 2, 2, &size));
-        assert!(!Slices::valid_borders(500, 2, 2, 2, &size));
-        assert!(!Slices::valid_borders(250, 2, 270, 2, &size));
-        assert!(!Slices::valid_borders(250, 2, 250, 2, &size));
-        assert!(!Slices::valid_borders(2, 500, 2, 2, &size));
-        assert!(Slices::valid_borders(2, 270, 2, 0, &size));
-        assert!(!Slices::valid_borders(2, 270, 2, 250, &size));
-        assert!(!Slices::valid_borders(2, 250, 2, 250, &size));
+        assert!(!NineSlices::valid_borders(0, 1, 2, 3, &size));
+        assert!(NineSlices::valid_borders(2, 2, 2, 2, &size));
+        assert!(!NineSlices::valid_borders(500, 2, 2, 2, &size));
+        assert!(!NineSlices::valid_borders(250, 2, 270, 2, &size));
+        assert!(!NineSlices::valid_borders(250, 2, 250, 2, &size));
+        assert!(!NineSlices::valid_borders(2, 500, 2, 2, &size));
+        assert!(NineSlices::valid_borders(2, 270, 2, 0, &size));
+        assert!(!NineSlices::valid_borders(2, 270, 2, 250, &size));
+        assert!(!NineSlices::valid_borders(2, 250, 2, 250, &size));
     }
 }
