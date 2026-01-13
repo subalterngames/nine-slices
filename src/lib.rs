@@ -68,8 +68,8 @@ impl<'s> NineSlicedSprite<'s> {
         self.resize_and_blit(
             clipped_rect,
             &self.slices.inner(),
-            width - (self.slices.left + self.slices.right) as u32,
-            height - (self.slices.top + self.slices.bottom) as u32,
+            width - (self.slices.left().size.w + self.slices.right().size.w) as u32,
+            height - (self.slices.top().size.h + self.slices.bottom().size.h) as u32,
             dst_buffer,
         )?;
 

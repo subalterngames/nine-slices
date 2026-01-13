@@ -10,9 +10,7 @@ checksum = "c08606f8c3cbf4ce6ec8e28fb0014a2c086708fe954eaa885384a6165172e7e8"
 
 [[package]]
 name = "blittle"
-version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5fc1e66d6eb6374ce29db2726134f461f853012f94da680eb40bb8ac553496e1"
+version = "0.4.2"
 
 [[package]]
 name = "cfg-if"
