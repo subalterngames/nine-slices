@@ -1,40 +1,56 @@
 use crate::{Error, Rect};
 use blittle::{PositionU, Size};
 
+#[derive(Copy, Clone, Eq, PartialEq, Debug)]
 pub struct NineSlices {
+    pub left: usize,
+    pub top: usize,
+    pub right: usize,
+    pub bottom: usize,
+}
+
+impl NineSlices {
+    pub(crate) fn into_internal(self, size: Size) -> Result<NineSlicesInternal, Error> {
+        if self.is_valid(&size) {
+            Ok(NineSlicesInternal {
+                left: self.left,
+                top: self.top,
+                right: self.right,
+                bottom: self.bottom,
+                size,
+            })
+        } else {
+            Err(Error::InvalidSlices(self))
+        }
+    }
+
+    /// Check whether we can use these borders:
+    ///
+    /// - There must be at least some padding.
+    /// - The borders must be within the area.
+    /// - The borders can't cross each other.
+    const fn is_valid(
+        &self,
+        size: &Size,
+    ) -> bool {
+        self.top > 0
+            && self.left > 0
+            && self.bottom > 0
+            && self.right > 0
+            && self.top < size.h - self.bottom
+            && self.left < size.w - self.right
+    }
+}
+
+pub struct NineSlicesInternal {
     left: usize,
     top: usize,
     right: usize,
     bottom: usize,
-    size: Size,
+    pub(crate) size: Size,
 }
 
-impl NineSlices {
-    pub const fn new(
-        left: usize,
-        top: usize,
-        right: usize,
-        bottom: usize,
-        size: Size,
-    ) -> Result<Self, Error> {
-        if !Self::valid_borders(left, top, bottom, right, &size) {
-            Err(Error::InvalidBorders {
-                left,
-                top,
-                right,
-                bottom,
-            })
-        } else {
-            Ok(Self {
-                left,
-                top,
-                right,
-                bottom,
-                size,
-            })
-        }
-    }
-
+impl NineSlicesInternal {
     pub const fn inner(&self) -> Rect {
         Rect {
             position: PositionU {
@@ -143,25 +159,7 @@ impl NineSlices {
         }
     }
 
-    /// Check whether we can use these borders:
-    ///
-    /// - There must be at least some padding.
-    /// - The borders must be within the area.
-    /// - The borders can't cross each other.
-    const fn valid_borders(
-        left: usize,
-        top: usize,
-        right: usize,
-        bottom: usize,
-        size: &Size,
-    ) -> bool {
-        top > 0
-            && left > 0
-            && bottom > 0
-            && right > 0
-            && top < size.h - bottom
-            && left < size.w - right
-    }
+
 }
 
 #[cfg(test)]
@@ -171,16 +169,73 @@ mod tests {
     #[test]
     fn test_sliced_borders() {
         let size = Size { w: 400, h: 300 };
-        assert!(!NineSlices::valid_borders(0, 1, 2, 3, &size));
-        assert!(NineSlices::valid_borders(2, 2, 2, 2, &size));
-        assert!(!NineSlices::valid_borders(500, 2, 2, 2, &size));
-        assert!(!NineSlices::valid_borders(250, 2, 270, 2, &size));
-        assert!(!NineSlices::valid_borders(250, 2, 250, 2, &size));
-        assert!(!NineSlices::valid_borders(2, 500, 2, 2, &size));
-        assert!(!NineSlices::valid_borders(2, 270, 2, 0, &size));
-        assert!(NineSlices::valid_borders(2, 270, 2, 1, &size));
-        assert!(!NineSlices::valid_borders(2, 270, 2, 250, &size));
-        assert!(!NineSlices::valid_borders(2, 250, 2, 250, &size));
+        assert!(NineSlices {
+            left: 2,
+            top: 2,
+            right: 2,
+            bottom: 2
+        }.is_valid(&size));
+        assert!(NineSlices {
+            left: 2,
+            top: 270,
+            right: 2,
+            bottom: 2
+        }.is_valid(&size));
+
+        // Can't have values that equal zero.
+        assert!(!NineSlices {
+            left: 0,
+            top: 0,
+            right: 0,
+            bottom: 0
+        }.is_valid(&size));
+        assert!(!NineSlices {
+            left: 0,
+            top: 1,
+            right: 2,
+            bottom: 3
+        }.is_valid(&size));
+
+        // Can't have borders cross each other.
+        assert!(!NineSlices {
+            left: 500,
+            top: 2,
+            right: 2,
+            bottom: 2
+        }.is_valid(&size));
+
+        assert!(!NineSlices {
+            left: 250,
+            top: 2,
+            right: 270,
+            bottom: 2
+        }.is_valid(&size));
+        assert!(!NineSlices {
+            left: 250,
+            top: 2,
+            right: 250,
+            bottom: 2
+        }.is_valid(&size));
+        assert!(!NineSlices {
+            left: 2,
+            top: 500,
+            right: 2,
+            bottom: 2
+        }.is_valid(&size));
+
+        // Can't have borders exceed size.
+        assert!(!NineSlices {
+            left: 900,
+            top: 1000,
+            right: 1200,
+            bottom: 2000
+        }.is_valid(&size));
+        assert!(!NineSlices {
+            left: 2,
+            top: 2,
+            right: 2,
+            bottom: 2000
+        }.is_valid(&size));
     }
 
     #[test]
@@ -191,7 +246,12 @@ mod tests {
         const BOTTOM: usize = 3;
         const D: usize = 64;
 
-        let slices = NineSlices::new(LEFT, TOP, RIGHT, BOTTOM, Size { w: D, h: D }).unwrap();
+        let slices = NineSlices {
+            left: LEFT,
+            top: TOP,
+            right: RIGHT,
+            bottom: BOTTOM
+        }.into_internal(Size { w: D, h: D }).unwrap();
         let top_left = slices.top_left();
         assert_eq!(top_left.position, PositionU::default());
         assert_eq!(top_left.size, Size { w: LEFT, h: TOP });

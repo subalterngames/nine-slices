@@ -1,21 +1,17 @@
 use fast_image_resize::PixelType;
 use thiserror::Error;
+use crate::NineSlices;
 
 #[derive(Debug, Error)]
 pub enum Error {
-    #[error("Invalid borders:\nleft: {left}\ntop: {top}\nright: {right}\nbottom: {bottom}")]
-    InvalidBorders {
-        left: usize,
-        top: usize,
-        right: usize,
-        bottom: usize,
-    },
+    #[error("Invalid borders: {:?}", 0)]
+    InvalidSlices(NineSlices),
     #[error("Failed to create an image from a vec: {0}")]
     FromVec(fast_image_resize::ImageBufferError),
     #[error("Error cropping inner area: {0}")]
     Inner(fast_image_resize::CropBoxError),
     #[error("Failed to resize inner area: {0}")]
-    ResizeInner(fast_image_resize::ResizeError),
+    Resize(fast_image_resize::ResizeError),
     #[error("Failed to create a mutable view of the source image.")]
     NoView,
     #[error("Invalid clipped rect")]
