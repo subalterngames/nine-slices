@@ -134,7 +134,7 @@ impl<'s> NineSlicedSprite<'s> {
                 h: resized.height() as usize,
             },
         );
-        self.blit(resized.buffer(), dst, &rect, &clipped_rect);
+        self.blit(resized.buffer(), dst, rect, &clipped_rect);
         Ok(())
     }
 }
