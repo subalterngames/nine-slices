@@ -112,7 +112,10 @@ impl<'s> NineSlicedSprite<'s> {
             &pixel_type_blittle,
         );
 
-        // TODO blit edges.
+        match &self.border_scaling {
+            BorderScaling::Repeat => todo!(),
+            BorderScaling::Stretch => self.stretch_edges(dst_buffer)?
+        }
 
         Ok(dst)
     }
@@ -142,5 +145,27 @@ impl<'s> NineSlicedSprite<'s> {
         let mut clipped_rect = *clipped_rect;
         clipped_rect.set_src_rect(rect.position, rect.size);
         blit(src, dst, &clipped_rect, pixel_type);
+    }
+
+    fn stretch_edges(&self, dst: &mut [u8]) -> Result<(), Error> {
+
+    }
+
+    fn stretch_edge(&self, edge: &Rect, dst: &mut [u8]) -> Result<(), Error> {
+        // Resize the inner area.
+        let options = ResizeOptions::new().crop(
+            edge.size.w as f64,
+            edge.size.h as f64,
+            edge.size.w as f64,
+            edge.size.h as f64,
+        );
+        let mut resized_inner = Image::new(
+            width - (self.slices.left.size.w + self.slices.right.size.w) as u32,
+            height - (self.slices.top.size.h + self.slices.bottom.size.h) as u32,
+            pixel_type,
+        );
+        self.resizer
+            .resize(&self.image, &mut resized_inner, Some(&options))
+            .map_err(Error::ResizeInner)?;
     }
 }
