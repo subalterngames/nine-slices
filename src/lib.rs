@@ -142,7 +142,7 @@ impl<'s> NineSlicedSprite<'s> {
             ClippedRect::new(dst_rect.position.into(), dst_rect.size, self.slices.size)
                 .ok_or(Error::InvalidClippedRect)?;
         clipped_rect.src_size_clipped = src_rect.size;
-        clipped_rect.src_position = src_rect.position;
+        clipped_rect.set_src_rect(src_rect.position, src_rect.size);
         blit(src, dst, &clipped_rect, &self.pixel_type.blittle);
         Ok(())
     }
