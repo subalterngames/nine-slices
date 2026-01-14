@@ -57,12 +57,11 @@ impl<'s> NineSlicedSprite<'s> {
 
         // Blit corners.
         let top_left = self.slices.top_left();
-        let top_right = self.slices.top_right();
-        /*
         self.blit(src, &top_left, dst_buffer, Rect {
             position: top_left.position,
             size: dst_size
         })?;
+        let top_right = self.slices.top_right();
         self.blit(src, &top_right, dst_buffer, Rect {
             position: PositionU {
                 x: dst_size.w - top_right.size.w,
@@ -86,8 +85,6 @@ impl<'s> NineSlicedSprite<'s> {
             },
             size: dst_size
         })?;
-
-         */
 
         // Resize and blit the inner area.
         self.resize_and_blit(
@@ -118,6 +115,7 @@ impl<'s> NineSlicedSprite<'s> {
 
     fn blit(&self, src: &[u8], src_rect: &Rect, dst: &mut [u8], dst_rect: Rect) -> Result<(), Error> {
         let mut clipped_rect = ClippedRect::new(dst_rect.position.into(), dst_rect.size, self.slices.size).ok_or(Error::InvalidClippedRect)?;
+        clipped_rect.src_size_clipped = src_rect.size;
         clipped_rect.set_src_rect(src_rect.position, src_rect.size);
         blit(src, dst, &clipped_rect, &self.pixel_type.blittle);
         Ok(())
