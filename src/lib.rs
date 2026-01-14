@@ -4,7 +4,7 @@ mod pixel_type;
 mod rect;
 mod slices;
 
-use blittle::{ClippedRect, PositionI, Size, blit, PositionU};
+use blittle::{ClippedRect, PositionU, Size, blit};
 pub use border_scaling::BorderScaling;
 pub use error::Error;
 pub use fast_image_resize;
@@ -32,7 +32,7 @@ impl<'s> NineSlicedSprite<'s> {
         let pixel_type = PixelType::new(&image)?;
         let slices = slices.into_internal(Size {
             w: image.width() as usize,
-            h: image.height() as usize
+            h: image.height() as usize,
         })?;
         Ok(Self {
             image,
@@ -57,64 +57,90 @@ impl<'s> NineSlicedSprite<'s> {
 
         // Blit corners.
         let top_left = self.slices.top_left();
-        self.blit(src, &top_left, dst_buffer, Rect {
-            position: top_left.position,
-            size: dst_size
-        })?;
+        self.blit(
+            src,
+            &top_left,
+            dst_buffer,
+            Rect {
+                position: top_left.position,
+                size: dst_size,
+            },
+        )?;
         let top_right = self.slices.top_right();
-        self.blit(src, &top_right, dst_buffer, Rect {
-            position: PositionU {
-                x: dst_size.w - top_right.size.w,
-                y: 0
+        self.blit(
+            src,
+            &top_right,
+            dst_buffer,
+            Rect {
+                position: PositionU {
+                    x: dst_size.w - top_right.size.w,
+                    y: 0,
+                },
+                size: dst_size,
             },
-            size: dst_size
-        })?;
+        )?;
         let bottom_right = self.slices.bottom_right();
-        self.blit(src, &top_right, dst_buffer, Rect {
-            position: PositionU {
-                x: dst_size.w - bottom_right.size.w,
-                y: dst_size.h - bottom_right.size.h
+        self.blit(
+            src,
+            &top_right,
+            dst_buffer,
+            Rect {
+                position: PositionU {
+                    x: dst_size.w - bottom_right.size.w,
+                    y: dst_size.h - bottom_right.size.h,
+                },
+                size: dst_size,
             },
-            size: dst_size
-        })?;
+        )?;
         let bottom_left = self.slices.bottom_left();
-        self.blit(src, &bottom_left, dst_buffer, Rect {
-            position: PositionU {
-                x: 0,
-                y: dst_size.h - bottom_right.size.h
+        self.blit(
+            src,
+            &bottom_left,
+            dst_buffer,
+            Rect {
+                position: PositionU {
+                    x: 0,
+                    y: dst_size.h - bottom_right.size.h,
+                },
+                size: dst_size,
             },
-            size: dst_size
-        })?;
+        )?;
 
         // Resize and blit the inner area.
         self.resize_and_blit(
             &self.slices.inner(),
             Size {
                 w: dst_size.w - (self.slices.left().size.w + self.slices.right().size.w),
-                h: dst_size.h - (self.slices.top().size.h + self.slices.bottom().size.h)
+                h: dst_size.h - (self.slices.top().size.h + self.slices.bottom().size.h),
             },
             Rect {
                 position: PositionU {
                     x: top_left.size.w,
                     y: top_right.size.h,
                 },
-                size: dst_size
+                size: dst_size,
             },
             dst_buffer,
         )?;
 
-        /*
         match &self.border_scaling {
             BorderScaling::Repeat => todo!(),
             BorderScaling::Stretch => self.stretch_edges(width, height, dst_buffer)?,
         }
-         */
 
         Ok(dst)
     }
 
-    fn blit(&self, src: &[u8], src_rect: &Rect, dst: &mut [u8], dst_rect: Rect) -> Result<(), Error> {
-        let mut clipped_rect = ClippedRect::new(dst_rect.position.into(), dst_rect.size, self.slices.size).ok_or(Error::InvalidClippedRect)?;
+    fn blit(
+        &self,
+        src: &[u8],
+        src_rect: &Rect,
+        dst: &mut [u8],
+        dst_rect: Rect,
+    ) -> Result<(), Error> {
+        let mut clipped_rect =
+            ClippedRect::new(dst_rect.position.into(), dst_rect.size, self.slices.size)
+                .ok_or(Error::InvalidClippedRect)?;
         clipped_rect.src_size_clipped = src_rect.size;
         clipped_rect.set_src_rect(src_rect.position, src_rect.size);
         blit(src, dst, &clipped_rect, &self.pixel_type.blittle);
@@ -122,41 +148,67 @@ impl<'s> NineSlicedSprite<'s> {
     }
 
     fn stretch_edges(&mut self, width: u32, height: u32, dst: &mut [u8]) -> Result<(), Error> {
-        let top_left = self.slices.top_left();
         let top = self.slices.top();
-        let top_right = self.slices.top_right();
         let right = self.slices.right();
-        let bottom_right = self.slices.bottom_right();
         let bottom = self.slices.bottom();
-        let bottom_left = self.slices.bottom_left();
         let left = self.slices.left();
 
         let total_dst_size = Size {
             w: width as usize,
-            h: height as usize
+            h: height as usize,
         };
 
         let w = total_dst_size.w - (left.size.w + right.size.w);
         let h = total_dst_size.h - (top.size.h + bottom.size.h);
 
-        self.resize_and_blit(&top, Size {
-            w,
-            h: top.size.h
-        }, Rect {
-            position: top.position,
-            size: total_dst_size,
-        }, dst)?;
-
-        self.resize_and_blit(&right, Size {
-            w: right.size.w,
-            h,
-        }, Rect {
-            position: PositionU {
-                x: total_dst_size.w - right.size.w,
-                y: total_dst_size.h - top.size.h
+        self.resize_and_blit(
+            &top,
+            Size { w, h: top.size.h },
+            Rect {
+                position: top.position,
+                size: total_dst_size,
             },
-            size: total_dst_size
-        }, dst)?;
+            dst,
+        )?;
+
+        self.resize_and_blit(
+            &right,
+            Size { w: right.size.w, h },
+            Rect {
+                position: PositionU {
+                    x: total_dst_size.w - right.size.w,
+                    y: top.size.h,
+                },
+                size: total_dst_size,
+            },
+            dst,
+        )?;
+
+        self.resize_and_blit(
+            &bottom,
+            Size {
+                w,
+                h: bottom.size.h,
+            },
+            Rect {
+                position: PositionU {
+                    x: bottom.position.x,
+                    y: total_dst_size.h - bottom.size.h,
+                },
+                size: total_dst_size,
+            },
+            dst,
+        )?;
+
+        self.resize_and_blit(
+            &left,
+            Size { w: left.size.w, h },
+            Rect {
+                position: left.position,
+                size: total_dst_size,
+            },
+            dst,
+        )?;
 
         Ok(())
     }
@@ -175,17 +227,17 @@ impl<'s> NineSlicedSprite<'s> {
             src_rect.size.w as f64,
             src_rect.size.h as f64,
         );
-        let mut resized = Image::new(resize_to.w as u32, resize_to.h as u32, self.pixel_type.fast_image_resize);
+        let mut resized = Image::new(
+            resize_to.w as u32,
+            resize_to.h as u32,
+            self.pixel_type.fast_image_resize,
+        );
         self.resizer
             .resize(&self.image, &mut resized, Some(&options))
             .map_err(Error::Resize)?;
         // Blit.
-        let clipped_rect = ClippedRect::new(
-            dst_rect.position.into(),
-            dst_rect.size,
-            resize_to,
-        )
-        .ok_or(Error::InvalidClippedRect)?;
+        let clipped_rect = ClippedRect::new(dst_rect.position.into(), dst_rect.size, resize_to)
+            .ok_or(Error::InvalidClippedRect)?;
         blit(
             resized.buffer(),
             dst,
@@ -218,8 +270,8 @@ mod tests {
         let slices = NineSlices {
             left: 32,
             top: 32,
-            right: 34,
-            bottom: 32
+            right: 32,
+            bottom: 32,
         };
         let mut n = NineSlicedSprite::new(image, slices, BorderScaling::Stretch).unwrap();
         let width = 1024;

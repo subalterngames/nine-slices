@@ -1,6 +1,6 @@
+use crate::NineSlices;
 use fast_image_resize::PixelType;
 use thiserror::Error;
-use crate::NineSlices;
 
 #[derive(Debug, Error)]
 pub enum Error {

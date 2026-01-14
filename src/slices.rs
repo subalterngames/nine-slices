@@ -29,10 +29,7 @@ impl NineSlices {
     /// - There must be at least some padding.
     /// - The borders must be within the area.
     /// - The borders can't cross each other.
-    const fn is_valid(
-        &self,
-        size: &Size,
-    ) -> bool {
+    const fn is_valid(&self, size: &Size) -> bool {
         self.top > 0
             && self.left > 0
             && self.bottom > 0
@@ -158,8 +155,6 @@ impl NineSlicesInternal {
             },
         }
     }
-
-
 }
 
 #[cfg(test)]
@@ -169,73 +164,103 @@ mod tests {
     #[test]
     fn test_sliced_borders() {
         let size = Size { w: 400, h: 300 };
-        assert!(NineSlices {
-            left: 2,
-            top: 2,
-            right: 2,
-            bottom: 2
-        }.is_valid(&size));
-        assert!(NineSlices {
-            left: 2,
-            top: 270,
-            right: 2,
-            bottom: 2
-        }.is_valid(&size));
+        assert!(
+            NineSlices {
+                left: 2,
+                top: 2,
+                right: 2,
+                bottom: 2
+            }
+            .is_valid(&size)
+        );
+        assert!(
+            NineSlices {
+                left: 2,
+                top: 270,
+                right: 2,
+                bottom: 2
+            }
+            .is_valid(&size)
+        );
 
         // Can't have values that equal zero.
-        assert!(!NineSlices {
-            left: 0,
-            top: 0,
-            right: 0,
-            bottom: 0
-        }.is_valid(&size));
-        assert!(!NineSlices {
-            left: 0,
-            top: 1,
-            right: 2,
-            bottom: 3
-        }.is_valid(&size));
+        assert!(
+            !NineSlices {
+                left: 0,
+                top: 0,
+                right: 0,
+                bottom: 0
+            }
+            .is_valid(&size)
+        );
+        assert!(
+            !NineSlices {
+                left: 0,
+                top: 1,
+                right: 2,
+                bottom: 3
+            }
+            .is_valid(&size)
+        );
 
         // Can't have borders cross each other.
-        assert!(!NineSlices {
-            left: 500,
-            top: 2,
-            right: 2,
-            bottom: 2
-        }.is_valid(&size));
+        assert!(
+            !NineSlices {
+                left: 500,
+                top: 2,
+                right: 2,
+                bottom: 2
+            }
+            .is_valid(&size)
+        );
 
-        assert!(!NineSlices {
-            left: 250,
-            top: 2,
-            right: 270,
-            bottom: 2
-        }.is_valid(&size));
-        assert!(!NineSlices {
-            left: 250,
-            top: 2,
-            right: 250,
-            bottom: 2
-        }.is_valid(&size));
-        assert!(!NineSlices {
-            left: 2,
-            top: 500,
-            right: 2,
-            bottom: 2
-        }.is_valid(&size));
+        assert!(
+            !NineSlices {
+                left: 250,
+                top: 2,
+                right: 270,
+                bottom: 2
+            }
+            .is_valid(&size)
+        );
+        assert!(
+            !NineSlices {
+                left: 250,
+                top: 2,
+                right: 250,
+                bottom: 2
+            }
+            .is_valid(&size)
+        );
+        assert!(
+            !NineSlices {
+                left: 2,
+                top: 500,
+                right: 2,
+                bottom: 2
+            }
+            .is_valid(&size)
+        );
 
         // Can't have borders exceed size.
-        assert!(!NineSlices {
-            left: 900,
-            top: 1000,
-            right: 1200,
-            bottom: 2000
-        }.is_valid(&size));
-        assert!(!NineSlices {
-            left: 2,
-            top: 2,
-            right: 2,
-            bottom: 2000
-        }.is_valid(&size));
+        assert!(
+            !NineSlices {
+                left: 900,
+                top: 1000,
+                right: 1200,
+                bottom: 2000
+            }
+            .is_valid(&size)
+        );
+        assert!(
+            !NineSlices {
+                left: 2,
+                top: 2,
+                right: 2,
+                bottom: 2000
+            }
+            .is_valid(&size)
+        );
     }
 
     #[test]
@@ -250,8 +275,10 @@ mod tests {
             left: LEFT,
             top: TOP,
             right: RIGHT,
-            bottom: BOTTOM
-        }.into_internal(Size { w: D, h: D }).unwrap();
+            bottom: BOTTOM,
+        }
+        .into_internal(Size { w: D, h: D })
+        .unwrap();
         let top_left = slices.top_left();
         assert_eq!(top_left.position, PositionU::default());
         assert_eq!(top_left.size, Size { w: LEFT, h: TOP });
