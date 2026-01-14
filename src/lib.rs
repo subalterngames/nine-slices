@@ -1,11 +1,9 @@
-mod border_scaling;
 mod error;
 mod pixel_type;
 mod rect;
 mod slices;
 
 use blittle::{ClippedRect, PositionU, Size, blit};
-pub use border_scaling::BorderScaling;
 pub use error::Error;
 pub use fast_image_resize;
 use fast_image_resize::images::Image;
@@ -19,7 +17,6 @@ pub struct NineSlicedSprite<'s> {
     image: Image<'s>,
     pixel_type: PixelType,
     slices: NineSlicesInternal,
-    border_scaling: BorderScaling,
     resizer: Resizer,
 }
 
@@ -27,7 +24,6 @@ impl<'s> NineSlicedSprite<'s> {
     pub fn new(
         image: Image<'s>,
         slices: NineSlices,
-        border_scaling: BorderScaling,
     ) -> Result<Self, Error> {
         let pixel_type = PixelType::new(&image)?;
         let slices = slices.into_internal(Size {
@@ -38,7 +34,6 @@ impl<'s> NineSlicedSprite<'s> {
             image,
             pixel_type,
             slices,
-            border_scaling,
             resizer: Resizer::new(),
         })
     }
@@ -123,10 +118,7 @@ impl<'s> NineSlicedSprite<'s> {
             dst_buffer,
         )?;
 
-        match &self.border_scaling {
-            BorderScaling::Repeat => todo!(),
-            BorderScaling::Stretch => self.stretch_edges(width, height, dst_buffer)?,
-        }
+        self.stretch_edges(width, height, dst_buffer)?;
 
         Ok(dst)
     }
@@ -274,7 +266,7 @@ mod tests {
             right: 32,
             bottom: 32,
         };
-        let mut n = NineSlicedSprite::new(image, slices, BorderScaling::Stretch).unwrap();
+        let mut n = NineSlicedSprite::new(image, slices).unwrap();
         let width = 1024;
         let height = 768;
         let image = n.resize(width, height).unwrap();
