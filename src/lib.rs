@@ -263,10 +263,11 @@ mod tests {
         let mut reader = decoder.read_info().unwrap();
         let mut buf = vec![0; reader.output_buffer_size().unwrap()];
         let info = reader.next_frame(&mut buf).unwrap();
+        assert_eq!(info.color_type, ColorType::Rgba);
         let bytes = buf[..info.buffer_size()].to_vec();
 
         let image =
-            Image::from_vec_u8(512, 512, bytes, fast_image_resize::PixelType::U8x3).unwrap();
+            Image::from_vec_u8(512, 512, bytes, fast_image_resize::PixelType::U8x4).unwrap();
         let slices = NineSlices {
             left: 32,
             top: 32,
@@ -280,7 +281,7 @@ mod tests {
         let path = Path::new("test_files/resized.png");
         let mut encoder =
             png::Encoder::new(BufWriter::new(File::create(path).unwrap()), width, height);
-        encoder.set_color(ColorType::Rgb);
+        encoder.set_color(ColorType::Rgba);
         let mut writer = encoder.write_header().unwrap();
         writer.write_image_data(image.buffer()).unwrap();
     }
