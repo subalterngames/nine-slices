@@ -82,7 +82,7 @@ impl<'s> NineSlicedSprite<'s> {
         let bottom_right = self.slices.bottom_right();
         self.blit(
             src,
-            &top_right,
+            &bottom_right,
             dst_buffer,
             Rect {
                 position: PositionU {
@@ -110,8 +110,8 @@ impl<'s> NineSlicedSprite<'s> {
         self.resize_and_blit(
             &self.slices.inner(),
             Size {
-                w: dst_size.w - (self.slices.left().size.w + self.slices.right().size.w),
-                h: dst_size.h - (self.slices.top().size.h + self.slices.bottom().size.h),
+                w: dst_size.w - (top_left.size.w + top_right.size.w) / 2,
+                h: dst_size.h - (top_left.size.h + bottom_left.size.h) / 2,
             },
             Rect {
                 position: PositionU {
@@ -142,7 +142,7 @@ impl<'s> NineSlicedSprite<'s> {
             ClippedRect::new(dst_rect.position.into(), dst_rect.size, self.slices.size)
                 .ok_or(Error::InvalidClippedRect)?;
         clipped_rect.src_size_clipped = src_rect.size;
-        clipped_rect.set_src_rect(src_rect.position, src_rect.size);
+        clipped_rect.src_position = src_rect.position;
         blit(src, dst, &clipped_rect, &self.pixel_type.blittle);
         Ok(())
     }
