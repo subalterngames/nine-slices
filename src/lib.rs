@@ -57,11 +57,12 @@ impl<'s> NineSlicedSprite<'s> {
 
         // Blit corners.
         let top_left = self.slices.top_left();
+        let top_right = self.slices.top_right();
+        /*
         self.blit(src, &top_left, dst_buffer, Rect {
             position: top_left.position,
             size: dst_size
         })?;
-        let top_right = self.slices.top_right();
         self.blit(src, &top_right, dst_buffer, Rect {
             position: PositionU {
                 x: dst_size.w - top_right.size.w,
@@ -86,6 +87,8 @@ impl<'s> NineSlicedSprite<'s> {
             size: dst_size
         })?;
 
+         */
+
         // Resize and blit the inner area.
         self.resize_and_blit(
             &self.slices.inner(),
@@ -103,10 +106,12 @@ impl<'s> NineSlicedSprite<'s> {
             dst_buffer,
         )?;
 
+        /*
         match &self.border_scaling {
             BorderScaling::Repeat => todo!(),
             BorderScaling::Stretch => self.stretch_edges(width, height, dst_buffer)?,
         }
+         */
 
         Ok(dst)
     }
@@ -215,7 +220,7 @@ mod tests {
         let slices = NineSlices {
             left: 32,
             top: 32,
-            right: 32,
+            right: 34,
             bottom: 32
         };
         let mut n = NineSlicedSprite::new(image, slices, BorderScaling::Stretch).unwrap();
