@@ -17,10 +17,10 @@ impl NineSlices {
             top: offsets.top,
             right: offsets.right,
             bottom: offsets.bottom,
-            size
+            size,
         }
     }
-    
+
     /// Returns a `Rect` describing the central region of a nine-sliced sprite.
     pub const fn inner(&self) -> Rect {
         Rect {

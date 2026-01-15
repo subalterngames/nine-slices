@@ -1,6 +1,6 @@
-use blittle::Size;
 use crate::Error;
 use crate::nine_slices::NineSlices;
+use blittle::Size;
 
 /// Border offsets that define a 9-sliced sprite.
 ///
@@ -83,7 +83,7 @@ mod tests {
                 right: 2,
                 bottom: 2
             }
-                .is_valid(&size)
+            .is_valid(&size)
         );
         assert!(
             BorderOffsets {
@@ -92,7 +92,7 @@ mod tests {
                 right: 2,
                 bottom: 2
             }
-                .is_valid(&size)
+            .is_valid(&size)
         );
 
         // Can't have values that equal zero.
@@ -103,7 +103,7 @@ mod tests {
                 right: 0,
                 bottom: 0
             }
-                .is_valid(&size)
+            .is_valid(&size)
         );
         assert!(
             !BorderOffsets {
@@ -112,7 +112,7 @@ mod tests {
                 right: 2,
                 bottom: 3
             }
-                .is_valid(&size)
+            .is_valid(&size)
         );
 
         // Can't have borders cross each other.
@@ -123,7 +123,7 @@ mod tests {
                 right: 2,
                 bottom: 2
             }
-                .is_valid(&size)
+            .is_valid(&size)
         );
 
         assert!(
@@ -133,7 +133,7 @@ mod tests {
                 right: 270,
                 bottom: 2
             }
-                .is_valid(&size)
+            .is_valid(&size)
         );
         assert!(
             !BorderOffsets {
@@ -142,7 +142,7 @@ mod tests {
                 right: 250,
                 bottom: 2
             }
-                .is_valid(&size)
+            .is_valid(&size)
         );
         assert!(
             !BorderOffsets {
@@ -151,7 +151,7 @@ mod tests {
                 right: 2,
                 bottom: 2
             }
-                .is_valid(&size)
+            .is_valid(&size)
         );
 
         // Can't have borders exceed size.
@@ -162,7 +162,7 @@ mod tests {
                 right: 1200,
                 bottom: 2000
             }
-                .is_valid(&size)
+            .is_valid(&size)
         );
         assert!(
             !BorderOffsets {
@@ -171,7 +171,7 @@ mod tests {
                 right: 2,
                 bottom: 2000
             }
-                .is_valid(&size)
+            .is_valid(&size)
         );
     }
 }
