@@ -1,132 +1,121 @@
 use crate::{BorderOffsets, Rect};
 use blittle::{PositionU, Size};
 
-/// Border offsets and the size of the bitmap.
+/// Nine slices of a sprite.
 pub struct NineSlices {
-    left: usize,
-    top: usize,
-    right: usize,
-    bottom: usize,
+    pub inner: Rect,
+    pub left: Rect,
+    pub top_left: Rect,
+    pub top: Rect,
+    pub top_right: Rect,
+    pub right: Rect,
+    pub bottom_right: Rect,
+    pub bottom: Rect,
+    pub bottom_left: Rect,
+    /// The size of the sprite.
     pub size: Size,
 }
 
 impl NineSlices {
     pub const fn new(offsets: BorderOffsets, size: Size) -> Self {
-        Self {
-            left: offsets.left,
-            top: offsets.top,
-            right: offsets.right,
-            bottom: offsets.bottom,
-            size,
-        }
-    }
-
-    /// Returns a `Rect` describing the central region of a nine-sliced sprite.
-    pub const fn inner(&self) -> Rect {
-        Rect {
+        let inner = Rect {
             position: PositionU {
-                x: self.left,
-                y: self.top,
+                x: offsets.left,
+                y: offsets.top,
             },
             size: Size {
-                w: self.size.w - (self.left + self.right),
-                h: self.size.h - (self.top + self.bottom),
+                w: size.w - (offsets.left + offsets.right),
+                h: size.h - (offsets.top + offsets.bottom),
             },
-        }
-    }
-
-    pub const fn top_left(&self) -> Rect {
-        Rect {
+        };
+        let left = Rect {
+            position: PositionU {
+                x: 0,
+                y: offsets.top,
+            },
+            size: Size {
+                w: offsets.left,
+                h: size.h - (offsets.top + offsets.bottom),
+            },
+        };
+        let top_left = Rect {
             position: PositionU { x: 0, y: 0 },
             size: Size {
-                w: self.left,
-                h: self.top,
+                w: offsets.left,
+                h: offsets.top,
             },
-        }
-    }
-
-    pub const fn top(&self) -> Rect {
-        Rect {
-            position: PositionU { x: self.left, y: 0 },
-            size: Size {
-                w: self.size.w - (self.left + self.right),
-                h: self.top,
-            },
-        }
-    }
-
-    pub const fn top_right(&self) -> Rect {
-        Rect {
+        };
+        let top = Rect {
             position: PositionU {
-                x: self.size.w - self.left,
+                x: offsets.left,
                 y: 0,
             },
             size: Size {
-                w: self.right,
-                h: self.top,
+                w: size.w - (offsets.left + offsets.right),
+                h: offsets.top,
             },
-        }
-    }
-
-    pub const fn right(&self) -> Rect {
-        Rect {
+        };
+        let top_right = Rect {
             position: PositionU {
-                x: self.size.w - self.right,
-                y: self.top,
+                x: size.w - offsets.left,
+                y: 0,
             },
             size: Size {
-                w: self.right,
-                h: self.size.h - (self.top + self.bottom),
+                w: offsets.right,
+                h: offsets.top,
             },
-        }
-    }
-
-    pub const fn bottom_right(&self) -> Rect {
-        Rect {
+        };
+        let right = Rect {
             position: PositionU {
-                x: self.size.w - self.right,
-                y: self.size.h - self.bottom,
+                x: size.w - offsets.right,
+                y: offsets.top,
             },
             size: Size {
-                w: self.right,
-                h: self.bottom,
+                w: offsets.right,
+                h: size.h - (offsets.top + offsets.bottom),
             },
-        }
-    }
-
-    pub const fn bottom(&self) -> Rect {
-        Rect {
+        };
+        let bottom_right = Rect {
             position: PositionU {
-                x: self.left,
-                y: self.size.h - self.bottom,
+                x: size.w - offsets.right,
+                y: size.h - offsets.bottom,
             },
             size: Size {
-                w: self.size.w - (self.left + self.right),
-                h: self.bottom,
+                w: offsets.right,
+                h: offsets.bottom,
             },
-        }
-    }
-
-    pub const fn bottom_left(&self) -> Rect {
-        Rect {
+        };
+        let bottom = Rect {
+            position: PositionU {
+                x: offsets.left,
+                y: size.h - offsets.bottom,
+            },
+            size: Size {
+                w: size.w - (offsets.left + offsets.right),
+                h: offsets.bottom,
+            },
+        };
+        let bottom_left = Rect {
             position: PositionU {
                 x: 0,
-                y: self.size.h - self.bottom,
+                y: size.h - offsets.bottom,
             },
             size: Size {
-                w: self.left,
-                h: self.bottom,
+                w: offsets.left,
+                h: offsets.bottom,
             },
-        }
-    }
-
-    pub const fn left(&self) -> Rect {
-        Rect {
-            position: PositionU { x: 0, y: self.top },
-            size: Size {
-                w: self.left,
-                h: self.size.h - (self.top + self.bottom),
-            },
+        };
+        Self {
+            inner,
+            left,
+            top_left,
+            top,
+            top_right,
+            right,
+            bottom_right,
+            bottom,
+            bottom_left,
+            size,
         }
     }
 }
@@ -149,81 +138,73 @@ mod tests {
             right: RIGHT,
             bottom: BOTTOM,
         }
-        .into_internal(Size { w: D, h: D })
+        .into_slices(Size { w: D, h: D })
         .unwrap();
-        let top_left = slices.top_left();
-        assert_eq!(top_left.position, PositionU::default());
-        assert_eq!(top_left.size, Size { w: LEFT, h: TOP });
-        let top = slices.top();
-        assert_eq!(top.position, PositionU { x: LEFT, y: 0 });
+        assert_eq!(slices.top_left.position, PositionU::default());
+        assert_eq!(slices.top_left.size, Size { w: LEFT, h: TOP });
+        assert_eq!(slices.top.position, PositionU { x: LEFT, y: 0 });
         assert_eq!(
-            top.size,
+            slices.top.size,
             Size {
                 w: D - LEFT - RIGHT,
                 h: TOP
             }
         );
-        let top_right = slices.top_right();
-        assert_eq!(top_right.position, PositionU { x: D - LEFT, y: 0 });
-        assert_eq!(top_right.size, Size { w: RIGHT, h: TOP });
-        let right = slices.right();
+        assert_eq!(slices.top_right.position, PositionU { x: D - LEFT, y: 0 });
+        assert_eq!(slices.top_right.size, Size { w: RIGHT, h: TOP });
         assert_eq!(
-            right.position,
+            slices.right.position,
             PositionU {
                 x: D - RIGHT,
                 y: TOP
             }
         );
         assert_eq!(
-            right.size,
+            slices.right.size,
             Size {
                 w: RIGHT,
                 h: D - TOP - BOTTOM
             }
         );
-        let bottom_right = slices.bottom_right();
         assert_eq!(
-            bottom_right.position,
+            slices.bottom_right.position,
             PositionU {
                 x: D - RIGHT,
                 y: D - BOTTOM
             }
         );
         assert_eq!(
-            right.size,
+            slices.right.size,
             Size {
                 w: RIGHT,
                 h: D - TOP - BOTTOM
             }
         );
-        let bottom = slices.bottom();
         assert_eq!(
-            bottom.position,
+            slices.bottom.position,
             PositionU {
                 x: LEFT,
                 y: D - BOTTOM
             }
         );
         assert_eq!(
-            bottom.size,
+            slices.bottom.size,
             Size {
                 w: D - LEFT - RIGHT,
                 h: BOTTOM
             }
         );
-        let bottom_left = slices.bottom_left();
         assert_eq!(
-            bottom_left.position,
+            slices.bottom_left.position,
             PositionU {
                 x: 0,
                 y: D - BOTTOM
             }
         );
-        assert_eq!(bottom_left.size, Size { w: LEFT, h: BOTTOM });
-        let left = slices.left();
-        assert_eq!(left.position, PositionU { x: 0, y: TOP });
+        assert_eq!(slices.bottom_left.size, Size { w: LEFT, h: BOTTOM });
+        assert_eq!(slices.left.position, PositionU { x: 0, y: TOP });
         assert_eq!(
-            left.size,
+            slices.left.size,
             Size {
                 w: LEFT,
                 h: D - TOP - BOTTOM

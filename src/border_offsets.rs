@@ -46,7 +46,7 @@ pub struct BorderOffsets {
 
 impl BorderOffsets {
     /// Check if the offsets are valid and then convert into `NineSlices`.
-    pub(crate) const fn into_internal(self, size: Size) -> Result<NineSlices, Error> {
+    pub(crate) const fn into_slices(self, size: Size) -> Result<NineSlices, Error> {
         if self.is_valid(&size) {
             Ok(NineSlices::new(self, size))
         } else {

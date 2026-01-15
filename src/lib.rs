@@ -37,7 +37,7 @@ impl<'s> NineSlicedSprite<'s> {
         border_scaling: BorderScaling,
     ) -> Result<Self, Error> {
         let pixel_type = PixelType::new(&image)?;
-        let slices = offsets.into_internal(Size {
+        let slices = offsets.into_slices(Size {
             w: image.width() as usize,
             h: image.height() as usize,
         })?;
@@ -83,7 +83,7 @@ impl<'s> NineSlicedSprite<'s> {
                 .map_err(Error::FromVec)?;
 
         // Convert border offsets to slices.
-        let slices = offsets.into_internal(Size {
+        let slices = offsets.into_slices(Size {
             w: image.width() as usize,
             h: image.height() as usize,
         })?;
@@ -111,51 +111,47 @@ impl<'s> NineSlicedSprite<'s> {
         };
 
         // Blit corners.
-        let top_left = self.slices.top_left();
         self.blit(
             src,
-            &top_left,
+            &self.slices.top_left,
             dst_buffer,
             Rect {
-                position: top_left.position,
+                position: self.slices.top_left.position,
                 size: dst_size,
             },
         )?;
-        let top_right = self.slices.top_right();
         self.blit(
             src,
-            &top_right,
+            &self.slices.top_right,
             dst_buffer,
             Rect {
                 position: PositionU {
-                    x: dst_size.w - top_right.size.w,
+                    x: dst_size.w - self.slices.top_right.size.w,
                     y: 0,
                 },
                 size: dst_size,
             },
         )?;
-        let bottom_right = self.slices.bottom_right();
         self.blit(
             src,
-            &bottom_right,
+            &self.slices.bottom_right,
             dst_buffer,
             Rect {
                 position: PositionU {
-                    x: dst_size.w - bottom_right.size.w,
-                    y: dst_size.h - bottom_right.size.h,
+                    x: dst_size.w - self.slices.bottom_right.size.w,
+                    y: dst_size.h - self.slices.bottom_right.size.h,
                 },
                 size: dst_size,
             },
         )?;
-        let bottom_left = self.slices.bottom_left();
         self.blit(
             src,
-            &bottom_left,
+            &self.slices.bottom_left,
             dst_buffer,
             Rect {
                 position: PositionU {
                     x: 0,
-                    y: dst_size.h - bottom_right.size.h,
+                    y: dst_size.h - self.slices.bottom_right.size.h,
                 },
                 size: dst_size,
             },
@@ -163,15 +159,15 @@ impl<'s> NineSlicedSprite<'s> {
 
         // Resize and blit the inner area.
         self.resize_and_blit(
-            &self.slices.inner(),
+            self.slices.inner,
             Size {
-                w: dst_size.w - (top_left.size.w + top_right.size.w),
-                h: dst_size.h - (top_left.size.h + bottom_left.size.h),
+                w: dst_size.w - (self.slices.top_left.size.w + self.slices.top_right.size.w),
+                h: dst_size.h - (self.slices.top_left.size.h + self.slices.bottom_left.size.h),
             },
             Rect {
                 position: PositionU {
-                    x: top_left.size.w,
-                    y: top_right.size.h,
+                    x: self.slices.top_left.size.w,
+                    y: self.slices.top_right.size.h,
                 },
                 size: dst_size,
             },
@@ -224,52 +220,37 @@ impl<'s> NineSlicedSprite<'s> {
     /// Resize the edges.
     /// `width` and `height` are the dimensions of `dst`.
     fn stretch_edges(&mut self, width: u32, height: u32, dst: &mut [u8]) -> Result<(), Error> {
-        let top = self.slices.top();
-        let right = self.slices.right();
-        let bottom = self.slices.bottom();
-        let left = self.slices.left();
-
         let total_dst_size = Size {
             w: width as usize,
             h: height as usize,
         };
 
-        let w = total_dst_size.w - (left.size.w + right.size.w);
-        let h = total_dst_size.h - (top.size.h + bottom.size.h);
+        let w = total_dst_size.w - (self.slices.left.size.w + self.slices.right.size.w);
+        let h = total_dst_size.h - (self.slices.top.size.h + self.slices.bottom.size.h);
 
         self.resize_and_blit(
-            &top,
-            Size { w, h: top.size.h },
-            Rect {
-                position: top.position,
-                size: total_dst_size,
-            },
-            dst,
-        )?;
-
-        self.resize_and_blit(
-            &right,
-            Size { w: right.size.w, h },
-            Rect {
-                position: PositionU {
-                    x: total_dst_size.w - right.size.w,
-                    y: top.size.h,
-                },
-                size: total_dst_size,
-            },
-            dst,
-        )?;
-
-        self.resize_and_blit(
-            &bottom,
+            self.slices.top,
             Size {
                 w,
-                h: bottom.size.h,
+                h: self.slices.top.size.h,
+            },
+            Rect {
+                position: self.slices.top.position,
+                size: total_dst_size,
+            },
+            dst,
+        )?;
+
+        self.resize_and_blit(
+            self.slices.right,
+            Size {
+                w: self.slices.right.size.w,
+                h,
             },
             Rect {
                 position: PositionU {
-                    x: bottom.position.x,
-                    y: total_dst_size.h - bottom.size.h,
+                    x: total_dst_size.w - self.slices.right.size.w,
+                    y: self.slices.top.size.h,
                 },
                 size: total_dst_size,
             },
@@ -277,10 +258,29 @@ impl<'s> NineSlicedSprite<'s> {
         )?;
 
         self.resize_and_blit(
-            &left,
-            Size { w: left.size.w, h },
+            self.slices.bottom,
+            Size {
+                w,
+                h: self.slices.bottom.size.h,
+            },
             Rect {
-                position: left.position,
+                position: PositionU {
+                    x: self.slices.bottom.position.x,
+                    y: total_dst_size.h - self.slices.bottom.size.h,
+                },
+                size: total_dst_size,
+            },
+            dst,
+        )?;
+
+        self.resize_and_blit(
+            self.slices.left,
+            Size {
+                w: self.slices.left.size.w,
+                h,
+            },
+            Rect {
+                position: self.slices.left.position,
                 size: total_dst_size,
             },
             dst,
@@ -292,7 +292,7 @@ impl<'s> NineSlicedSprite<'s> {
     /// Resize
     fn resize_and_blit(
         &mut self,
-        src_rect: &Rect,
+        src_rect: Rect,
         resize_to: Size,
         dst_rect: Rect,
         dst: &mut [u8],
