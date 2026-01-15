@@ -9,6 +9,13 @@ fast_image_resize = "6.0.0"
 png = { version = "0.18.0", optional = true }
 thiserror = "2.0.17"
 
+[dev-dependencies]
+criterion = "0.8.1"
+
 [features]
 default = ["png"]
 png = ["dep:png"]
+
+[[bench]]
+name = "bench"
+harness = false
