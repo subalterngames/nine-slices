@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-blittle = "0.4.3"
+blittle = { path = "../blittle" }
 fast_image_resize = "6.0.0"
 thiserror = "2.0.17"
 

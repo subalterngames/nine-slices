@@ -105,8 +105,8 @@ impl<'s> NineSlicedSprite<'s> {
         self.resize_and_blit(
             &self.slices.inner(),
             Size {
-                w: dst_size.w - (top_left.size.w + top_right.size.w) / 2,
-                h: dst_size.h - (top_left.size.h + bottom_left.size.h) / 2,
+                w: dst_size.w - (top_left.size.w + top_right.size.w),
+                h: dst_size.h - (top_left.size.h + bottom_left.size.h),
             },
             Rect {
                 position: PositionU {
