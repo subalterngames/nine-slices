@@ -15,7 +15,10 @@ pub enum PngError {
     InvalidColorBitDepth(png::ColorType, png::BitDepth),
     #[error("nine-slice doesn't supported indexed colors.")]
     IndexedColorType,
-    #[error("Invalid blittle pixel type: {:?}. To use this pixel type, you must must disable the png feature", 0)]
+    #[error(
+        "Invalid blittle pixel type: {:?}. To use this pixel type, you must must disable the png feature",
+        0
+    )]
     BlittlePixelType(blittle::PixelType),
 }
 
