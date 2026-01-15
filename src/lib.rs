@@ -29,6 +29,8 @@ pub struct NineSlicedSprite<'s> {
 }
 
 impl<'s> NineSlicedSprite<'s> {
+    /// Slice an in-memory `image` using `offsets`.
+    /// `border_scaling` defines how borders are scaled.
     pub fn new(
         image: Image<'s>,
         offsets: BorderOffsets,
@@ -48,12 +50,15 @@ impl<'s> NineSlicedSprite<'s> {
         })
     }
 
+    /// Load a .png file and then slice it using `offsets`.
+    /// `border_scaling` defines how borders are scaled.
     #[cfg(feature = "png")]
     pub fn from_png<R: BufRead + Seek>(
         r: R,
         offsets: BorderOffsets,
         border_scaling: BorderScaling,
     ) -> Result<Self, Error> {
+        // Boilerplate .png decoding.
         let decoder = png::Decoder::new(r);
         let mut reader = decoder
             .read_info()
@@ -68,14 +73,21 @@ impl<'s> NineSlicedSprite<'s> {
             .next_frame(&mut buf)
             .map_err(|e| Error::Png(PngError::Frame(e)))?;
         let bytes = buf[..info.buffer_size()].to_vec();
+
+        // Derive the pixel type.
         let pixel_type = PixelType::from_png(&info.color_type, &info.bit_depth)?;
+
+        // Convert to `Image`.
         let image =
             Image::from_vec_u8(info.width, info.height, bytes, pixel_type.fast_image_resize)
                 .map_err(Error::FromVec)?;
+
+        // Convert border offsets to slices.
         let slices = offsets.into_internal(Size {
             w: image.width() as usize,
             h: image.height() as usize,
         })?;
+
         Ok(Self {
             image,
             pixel_type,
@@ -85,6 +97,7 @@ impl<'s> NineSlicedSprite<'s> {
         })
     }
 
+    /// Resize the sprite to dimensions `(width, height)`.
     pub fn resize(&mut self, width: u32, height: u32) -> Result<Image<'_>, Error> {
         let src = self.image.buffer();
 
@@ -176,6 +189,7 @@ impl<'s> NineSlicedSprite<'s> {
         Ok(dst)
     }
 
+    /// Write a resized image as a .png
     #[cfg(feature = "png")]
     pub fn write<W: Write>(image: &Image<'_>, w: W) -> Result<(), Error> {
         let pixel_type = PixelType::new(image)?;
@@ -190,6 +204,7 @@ impl<'s> NineSlicedSprite<'s> {
             .map_err(|e| Error::Png(PngError::WritePng(e)))
     }
 
+    /// Blit an area of `src` defined by `src_rect` to `dst`.
     fn blit(
         &self,
         src: &[u8],
@@ -206,6 +221,8 @@ impl<'s> NineSlicedSprite<'s> {
         Ok(())
     }
 
+    /// Resize the edges.
+    /// `width` and `height` are the dimensions of `dst`.
     fn stretch_edges(&mut self, width: u32, height: u32, dst: &mut [u8]) -> Result<(), Error> {
         let top = self.slices.top();
         let right = self.slices.right();
@@ -272,6 +289,7 @@ impl<'s> NineSlicedSprite<'s> {
         Ok(())
     }
 
+    /// Resize
     fn resize_and_blit(
         &mut self,
         src_rect: &Rect,
