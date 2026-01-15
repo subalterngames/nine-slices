@@ -339,7 +339,7 @@ mod tests {
             right: 32,
             bottom: 32,
         };
-        let mut n = NineSlicedSprite::from_png(
+        let mut sprite = NineSlicedSprite::from_png(
             Cursor::new(include_bytes!("../test_files/test_image.png")),
             slices,
             BorderScaling::Stretch,
@@ -348,7 +348,7 @@ mod tests {
 
         let width = 1024;
         let height = 768;
-        let image = n.resize(width, height).unwrap();
+        let image = sprite.resize(width, height).unwrap();
 
         NineSlicedSprite::write(
             &image,
