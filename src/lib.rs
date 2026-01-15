@@ -217,6 +217,40 @@ impl<'s> NineSlicedSprite<'s> {
         Ok(())
     }
 
+    fn resize_and_blit(
+        &mut self,
+        src_rect: Rect,
+        resize_to: Size,
+        dst_rect: Rect,
+        dst: &mut [u8],
+    ) -> Result<(), Error> {
+        // Resize.
+        let options = ResizeOptions::new().crop(
+            src_rect.position.x as f64,
+            src_rect.position.y as f64,
+            src_rect.size.w as f64,
+            src_rect.size.h as f64,
+        );
+        let mut resized = Image::new(
+            resize_to.w as u32,
+            resize_to.h as u32,
+            self.pixel_type.fast_image_resize,
+        );
+        self.resizer
+            .resize(&self.image, &mut resized, Some(&options))
+            .map_err(Error::Resize)?;
+        // Blit.
+        let clipped_rect = ClippedRect::new(dst_rect.position.into(), dst_rect.size, resize_to)
+            .ok_or(Error::InvalidClippedRect)?;
+        blit(
+            resized.buffer(),
+            dst,
+            &clipped_rect,
+            &self.pixel_type.blittle,
+        );
+        Ok(())
+    }
+
     /// Resize the edges.
     /// `width` and `height` are the dimensions of `dst`.
     fn stretch_edges(&mut self, width: u32, height: u32, dst: &mut [u8]) -> Result<(), Error> {
@@ -286,41 +320,6 @@ impl<'s> NineSlicedSprite<'s> {
             dst,
         )?;
 
-        Ok(())
-    }
-
-    /// Resize
-    fn resize_and_blit(
-        &mut self,
-        src_rect: Rect,
-        resize_to: Size,
-        dst_rect: Rect,
-        dst: &mut [u8],
-    ) -> Result<(), Error> {
-        // Resize.
-        let options = ResizeOptions::new().crop(
-            src_rect.position.x as f64,
-            src_rect.position.y as f64,
-            src_rect.size.w as f64,
-            src_rect.size.h as f64,
-        );
-        let mut resized = Image::new(
-            resize_to.w as u32,
-            resize_to.h as u32,
-            self.pixel_type.fast_image_resize,
-        );
-        self.resizer
-            .resize(&self.image, &mut resized, Some(&options))
-            .map_err(Error::Resize)?;
-        // Blit.
-        let clipped_rect = ClippedRect::new(dst_rect.position.into(), dst_rect.size, resize_to)
-            .ok_or(Error::InvalidClippedRect)?;
-        blit(
-            resized.buffer(),
-            dst,
-            &clipped_rect,
-            &self.pixel_type.blittle,
-        );
         Ok(())
     }
 }
