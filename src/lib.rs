@@ -5,7 +5,7 @@ mod nine_slices;
 mod pixel_type;
 mod rect;
 
-use blittle::{ClippedRect, PositionU, Size, blit};
+use blittle::{ClippedRect, PositionI, PositionU, Size, blit};
 pub use border_offsets::BorderOffsets;
 pub use border_scaling::BorderScaling;
 pub use error::Error;
@@ -176,10 +176,8 @@ impl<'s> NineSlicedSprite<'s> {
 
         // Resize the borders.
         match &self.border_scaling {
-            BorderScaling::Stretch => {
-                self.stretch_edges(width, height, dst_buffer)?;
-            }
-            BorderScaling::Repeat => todo!(),
+            BorderScaling::Stretch => self.stretch_edges(width, height, dst_buffer)?,
+            BorderScaling::Repeat => self.repeat_edges(width, height, dst_buffer),
         }
 
         Ok(dst)
@@ -321,6 +319,57 @@ impl<'s> NineSlicedSprite<'s> {
         )?;
 
         Ok(())
+    }
+
+    fn repeat_edges(&mut self, width: u32, height: u32, dst: &mut [u8]) {
+        self.repeat_vertical(self.slices.left, height, dst);
+        self.repeat_horizontal(self.slices.top, width, dst);
+        self.repeat_vertical(self.slices.right, height, dst);
+        self.repeat_horizontal(self.slices.bottom, width, dst);
+    }
+
+    fn repeat_horizontal(&self, src_rect: Rect, width: u32, dst: &mut [u8]) {
+        let size = Size {
+            w: width as usize,
+            h: src_rect.size.h,
+        };
+        let mut x = src_rect.position.x;
+        let y = src_rect.position.y.cast_signed();
+        let src = self.image.buffer();
+        while let Some(mut rect) = ClippedRect::new(
+            PositionI {
+                x: x.cast_signed(),
+                y,
+            },
+            size,
+            self.slices.size,
+        ) {
+            rect.set_src_rect(src_rect.position, src_rect.size);
+            blit(src, dst, &rect, &self.pixel_type.blittle);
+            x += rect.src_size_clipped.w;
+        }
+    }
+
+    fn repeat_vertical(&self, src_rect: Rect, height: u32, dst: &mut [u8]) {
+        let size = Size {
+            w: src_rect.size.w,
+            h: height as usize,
+        };
+        let x = src_rect.position.x.cast_signed();
+        let mut y = src_rect.position.y;
+        let src = self.image.buffer();
+        while let Some(mut rect) = ClippedRect::new(
+            PositionI {
+                x,
+                y: y.cast_signed(),
+            },
+            size,
+            self.slices.size,
+        ) {
+            rect.set_src_rect(src_rect.position, src_rect.size);
+            blit(src, dst, &rect, &self.pixel_type.blittle);
+            y += rect.src_size_clipped.h;
+        }
     }
 }
 
