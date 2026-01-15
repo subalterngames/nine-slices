@@ -1,32 +1,33 @@
 mod error;
+mod border_offsets;
 mod pixel_type;
 mod rect;
-mod slices;
+mod nine_slices;
 
 use blittle::{ClippedRect, PositionU, Size, blit};
+pub use border_offsets::BorderOffsets;
 pub use error::Error;
 pub use fast_image_resize;
 use fast_image_resize::images::Image;
 use fast_image_resize::{ResizeOptions, Resizer};
 use pixel_type::PixelType;
 pub use rect::Rect;
-pub use slices::NineSlices;
-use slices::NineSlicesInternal;
+use nine_slices::NineSlices;
 
 pub struct NineSlicedSprite<'s> {
     image: Image<'s>,
     pixel_type: PixelType,
-    slices: NineSlicesInternal,
+    slices: NineSlices,
     resizer: Resizer,
 }
 
 impl<'s> NineSlicedSprite<'s> {
     pub fn new(
         image: Image<'s>,
-        slices: NineSlices,
+        offsets: BorderOffsets,
     ) -> Result<Self, Error> {
         let pixel_type = PixelType::new(&image)?;
-        let slices = slices.into_internal(Size {
+        let slices = offsets.into_internal(Size {
             w: image.width() as usize,
             h: image.height() as usize,
         })?;
@@ -260,7 +261,7 @@ mod tests {
 
         let image =
             Image::from_vec_u8(512, 512, bytes, fast_image_resize::PixelType::U8x4).unwrap();
-        let slices = NineSlices {
+        let slices = BorderOffsets {
             left: 32,
             top: 32,
             right: 32,

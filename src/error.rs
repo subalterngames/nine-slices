@@ -1,11 +1,11 @@
-use crate::NineSlices;
+use crate::{BorderOffsets, NineSlices};
 use fast_image_resize::PixelType;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum Error {
     #[error("Invalid borders: {:?}", 0)]
-    InvalidSlices(NineSlices),
+    InvalidSlices(BorderOffsets),
     #[error("Failed to create an image from a vec: {0}")]
     FromVec(fast_image_resize::ImageBufferError),
     #[error("Error cropping inner area: {0}")]

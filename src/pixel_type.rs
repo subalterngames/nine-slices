@@ -1,6 +1,7 @@
 use crate::Error;
 use fast_image_resize::images::Image;
 
+/// Pixel types as expressed in different crates.
 pub struct PixelType {
     pub blittle: blittle::PixelType,
     pub fast_image_resize: fast_image_resize::PixelType,
@@ -16,7 +17,7 @@ impl PixelType {
         })
     }
 
-    pub const fn get_blittle_pixel_type(
+    const fn get_blittle_pixel_type(
         pixel_type: fast_image_resize::PixelType,
     ) -> Result<blittle::PixelType, Error> {
         match pixel_type {
