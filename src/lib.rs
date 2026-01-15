@@ -322,15 +322,15 @@ impl<'s> NineSlicedSprite<'s> {
     }
 
     fn repeat_edges(&mut self, width: u32, height: u32, dst: &mut [u8]) {
-        self.repeat_vertical(self.slices.left, height, dst);
-        self.repeat_horizontal(self.slices.top, width, dst);
-        self.repeat_vertical(self.slices.right, height, dst);
-        self.repeat_horizontal(self.slices.bottom, width, dst);
+        //self.repeat_vertical(self.slices.left, height, dst);
+        self.repeat_horizontal(self.slices.top, width, height, dst);
+        //self.repeat_vertical(self.slices.right, height, dst);
+        //self.repeat_horizontal(self.slices.bottom, width, dst);
     }
 
-    fn repeat_horizontal(&self, src_rect: Rect, width: u32, dst: &mut [u8]) {
+    fn repeat_horizontal(&self, src_rect: Rect, width: u32, height: u32, dst: &mut [u8]) {
         let size = Size {
-            w: width as usize,
+            w: width as usize - (self.slices.top_left.size.w + self.slices.top_right.size.w),
             h: src_rect.size.h,
         };
         let mut x = src_rect.position.x;
@@ -341,8 +341,11 @@ impl<'s> NineSlicedSprite<'s> {
                 x: x.cast_signed(),
                 y,
             },
-            size,
             self.slices.size,
+            Size {
+                w: width as usize,
+                h: height as usize,
+            },
         ) {
             rect.set_src_rect(src_rect.position, src_rect.size);
             blit(src, dst, &rect, &self.pixel_type.blittle);
@@ -391,7 +394,7 @@ mod tests {
         let mut n = NineSlicedSprite::from_png(
             Cursor::new(include_bytes!("../test_files/test_image.png")),
             slices,
-            BorderScaling::Stretch,
+            BorderScaling::Repeat,
         )
         .unwrap();
 
