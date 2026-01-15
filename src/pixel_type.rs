@@ -139,6 +139,3 @@ impl PixelType {
         }
     }
 }
-
-#[cfg(test)]
-mod tests {}
