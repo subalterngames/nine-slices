@@ -5,13 +5,17 @@ mod nine_slices;
 mod pixel_type;
 mod rect;
 
+use std::io::{BufRead, Cursor, Seek};
 use blittle::{ClippedRect, PositionU, Size, blit};
 pub use border_offsets::BorderOffsets;
 pub use border_scaling::BorderScaling;
 pub use error::Error;
+#[cfg(feature = "png")]
+pub use error::PngError;
 pub use fast_image_resize;
 use fast_image_resize::images::Image;
 use fast_image_resize::{ResizeOptions, Resizer};
+use png::ColorType;
 use nine_slices::NineSlices;
 use pixel_type::PixelType;
 pub use rect::Rect;
@@ -31,6 +35,30 @@ impl<'s> NineSlicedSprite<'s> {
         border_scaling: BorderScaling,
     ) -> Result<Self, Error> {
         let pixel_type = PixelType::new(&image)?;
+        let slices = offsets.into_internal(Size {
+            w: image.width() as usize,
+            h: image.height() as usize,
+        })?;
+        Ok(Self {
+            image,
+            pixel_type,
+            slices,
+            border_scaling,
+            resizer: Resizer::new(),
+        })
+    }
+    
+    pub fn new_from_png<R: BufRead + Seek>(r: R,         offsets: BorderOffsets,
+                                           border_scaling: BorderScaling,) -> Result<Self, Error> {
+        let decoder =
+            png::Decoder::new(r);
+        let mut reader = decoder.read_info().map_err(|e| Error::Png(PngError::PngInfo(e)))?;
+        let mut buf = vec![0; reader.output_buffer_size().ok_or(Error::Png(PngError::OutputBufferSize))?];
+        let info = reader.next_frame(&mut buf).map_err(|e| Error::Png(PngError::PngFrame(e)))?;
+        let bytes = buf[..info.buffer_size()].to_vec();
+        let pixel_type = PixelType::from_png(&info.color_type, &info.bit_depth)?;
+        let image =
+            Image::from_vec_u8(info.width, info.height, bytes, pixel_type.fast_image_resize).map_err(Error::FromVec)?;
         let slices = offsets.into_internal(Size {
             w: image.width() as usize,
             h: image.height() as usize,

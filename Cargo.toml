@@ -6,7 +6,9 @@ edition = "2024"
 [dependencies]
 blittle = "0.4.3"
 fast_image_resize = "6.0.0"
+png = { version = "0.18.0", optional = true }
 thiserror = "2.0.17"
 
-[dev-dependencies]
-png = "0.18.0"
+[features]
+default = ["png"]
+png = ["dep:png"]
