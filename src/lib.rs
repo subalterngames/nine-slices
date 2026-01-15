@@ -16,9 +16,9 @@ use fast_image_resize::images::Image;
 use fast_image_resize::{ResizeOptions, Resizer};
 use nine_slices::NineSlices;
 use pixel_type::PixelType;
-use png::ColorType;
 pub use rect::Rect;
-use std::io::{BufRead, Cursor, Seek};
+#[cfg(feature = "png")]
+use std::io::{BufRead, Seek, Write};
 
 pub struct NineSlicedSprite<'s> {
     image: Image<'s>,
@@ -48,7 +48,8 @@ impl<'s> NineSlicedSprite<'s> {
         })
     }
 
-    pub fn new_from_png<R: BufRead + Seek>(
+    #[cfg(feature = "png")]
+    pub fn from_png<R: BufRead + Seek>(
         r: R,
         offsets: BorderOffsets,
         border_scaling: BorderScaling,
@@ -56,7 +57,7 @@ impl<'s> NineSlicedSprite<'s> {
         let decoder = png::Decoder::new(r);
         let mut reader = decoder
             .read_info()
-            .map_err(|e| Error::Png(PngError::PngInfo(e)))?;
+            .map_err(|e| Error::Png(PngError::Info(e)))?;
         let mut buf = vec![
             0;
             reader
@@ -65,7 +66,7 @@ impl<'s> NineSlicedSprite<'s> {
         ];
         let info = reader
             .next_frame(&mut buf)
-            .map_err(|e| Error::Png(PngError::PngFrame(e)))?;
+            .map_err(|e| Error::Png(PngError::Frame(e)))?;
         let bytes = buf[..info.buffer_size()].to_vec();
         let pixel_type = PixelType::from_png(&info.color_type, &info.bit_depth)?;
         let image =
@@ -173,6 +174,20 @@ impl<'s> NineSlicedSprite<'s> {
         }
 
         Ok(dst)
+    }
+
+    #[cfg(feature = "png")]
+    pub fn write<W: Write>(image: &Image<'_>, w: W) -> Result<(), Error> {
+        let pixel_type = PixelType::new(image)?;
+        let mut encoder = png::Encoder::new(w, image.width(), image.height());
+        encoder.set_color(pixel_type.png.color_type);
+        encoder.set_depth(pixel_type.png.bit_depth);
+        let mut writer = encoder
+            .write_header()
+            .map_err(|e| Error::Png(PngError::WriteHeader(e)))?;
+        writer
+            .write_image_data(image.buffer())
+            .map_err(|e| Error::Png(PngError::WritePng(e)))
     }
 
     fn blit(
@@ -292,41 +307,36 @@ impl<'s> NineSlicedSprite<'s> {
     }
 }
 
+#[cfg(feature = "png")]
 #[cfg(test)]
 mod tests {
     use super::*;
-    use png::ColorType;
     use std::fs::File;
     use std::io::{BufWriter, Cursor};
-    use std::path::Path;
 
     #[test]
     fn test_resize() {
-        let decoder =
-            png::Decoder::new(Cursor::new(include_bytes!("../test_files/test_image.png")));
-        let mut reader = decoder.read_info().unwrap();
-        let mut buf = vec![0; reader.output_buffer_size().unwrap()];
-        let info = reader.next_frame(&mut buf).unwrap();
-        assert_eq!(info.color_type, ColorType::Rgba);
-        let bytes = buf[..info.buffer_size()].to_vec();
-
-        let image =
-            Image::from_vec_u8(512, 512, bytes, fast_image_resize::PixelType::U8x4).unwrap();
         let slices = BorderOffsets {
             left: 32,
             top: 32,
             right: 32,
             bottom: 32,
         };
-        let mut n = NineSlicedSprite::new(image, slices, BorderScaling::Stretch).unwrap();
+        let mut n = NineSlicedSprite::from_png(
+            Cursor::new(include_bytes!("../test_files/test_image.png")),
+            slices,
+            BorderScaling::Stretch,
+        )
+        .unwrap();
+
         let width = 1024;
         let height = 768;
         let image = n.resize(width, height).unwrap();
-        let path = Path::new("test_files/resized.png");
-        let mut encoder =
-            png::Encoder::new(BufWriter::new(File::create(path).unwrap()), width, height);
-        encoder.set_color(ColorType::Rgba);
-        let mut writer = encoder.write_header().unwrap();
-        writer.write_image_data(image.buffer()).unwrap();
+
+        NineSlicedSprite::write(
+            &image,
+            BufWriter::new(File::create("test_files/resized.png").unwrap()),
+        )
+        .unwrap();
     }
 }

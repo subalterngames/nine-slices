@@ -1,6 +1,7 @@
 use crate::Error;
 use fast_image_resize::images::Image;
 
+#[cfg(feature = "png")]
 pub struct PngPixelType {
     pub color_type: png::ColorType,
     pub bit_depth: png::BitDepth,
@@ -37,6 +38,8 @@ impl PixelType {
         }
     }
 
+    /// Derive the pixel type from a png `ColorType` and `BitDepth`.
+    /// Some combinations of `ColorType` and `BitDepth` are not allowed.
     #[cfg(feature = "png")]
     pub fn from_png(color_type: &png::ColorType, bit_depth: &png::BitDepth) -> Result<Self, Error> {
         const fn get_pixel_type(
@@ -109,6 +112,8 @@ impl PixelType {
         }
     }
 
+    /// Get a `PngPixelType` from a `blittle::PixelType`.
+    /// Some blittle pixel types are not allowed.
     #[cfg(feature = "png")]
     const fn get_png_pixel_type(
         pixel_type: &blittle::PixelType,

@@ -6,11 +6,11 @@ use thiserror::Error;
 #[derive(Debug, Error)]
 pub enum PngError {
     #[error("Failed to read png info: {0}")]
-    PngInfo(png::DecodingError),
+    Info(png::DecodingError),
     #[error("Failed to get the output buffer size of the source .png")]
     OutputBufferSize,
     #[error("Failed to read png frame: {0}")]
-    PngFrame(png::DecodingError),
+    Frame(png::DecodingError),
     #[error("Invalid png color type and bit depth: {:?}, {:?}", 0, 1)]
     InvalidColorBitDepth(png::ColorType, png::BitDepth),
     #[error("nine-slice doesn't supported indexed colors.")]
@@ -20,6 +20,10 @@ pub enum PngError {
         0
     )]
     BlittlePixelType(blittle::PixelType),
+    #[error("Failed to write png header: {0}")]
+    WriteHeader(png::EncodingError),
+    #[error("Failed to write png: {0}")]
+    WritePng(png::EncodingError),
 }
 
 #[derive(Debug, Error)]
@@ -38,6 +42,7 @@ pub enum Error {
     InvalidClippedRect,
     #[error("Unsupported pixel type: {:?}", 0)]
     UnsupportedPixelType(PixelType),
+    #[cfg(feature = "png")]
     #[error("{0}")]
     Png(PngError),
 }
