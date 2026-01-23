@@ -248,13 +248,22 @@ impl<'s> NineSlicedSprite<'s> {
         let clipped_rect = ClippedRect::new(dst_rect.position.into(), dst_rect.size, resize_to)
             .ok_or(Error::InvalidClippedRect)?;
         match method {
+            // An obvious optimization!
+            // The slice will sometimes contain a single color.
+            // So, let's just create a new bitmap with that color.
             ResizeMethod::Fill(color) => {
                 let src = color.get_filled(resize_to);
                 // Blit the byte array.
                 blit(&src, dst, &clipped_rect, &self.pixel_type.blittle);
             }
             ResizeMethod::Resize => {
-                // Resize.
+                // Get a new buffer.
+                let mut resized = Image::new(
+                    resize_to.w as u32,
+                    resize_to.h as u32,
+                    self.pixel_type.fast_image_resize,
+                );
+                // Crop the source image.
                 let options = ResizeOptions::new()
                     .crop(
                         src_rect.position.x as f64,
@@ -263,14 +272,11 @@ impl<'s> NineSlicedSprite<'s> {
                         src_rect.size.h as f64,
                     )
                     .resize_alg(self.resize_algorithm);
-                let mut resized = Image::new(
-                    resize_to.w as u32,
-                    resize_to.h as u32,
-                    self.pixel_type.fast_image_resize,
-                );
+                // Resize the cropped image into `resized`.
                 self.resizer
                     .resize(&self.image, &mut resized, Some(&options))
                     .map_err(Error::Resize)?;
+                // Blit `resized` onto `dst`.
                 blit(
                     resized.buffer(),
                     dst,

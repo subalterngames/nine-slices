@@ -4,6 +4,7 @@ use crate::pixel_color::PixelColor;
 use crate::pixel_type::PixelType;
 use blittle::PositionU;
 
+/// Whether to fill a bitmap with a color or to resize a bitmap that has multiple colors.
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub enum ResizeMethod {
     /// Do this if all pixels are the same.
@@ -26,6 +27,7 @@ impl ResizeMethod {
     }
 }
 
+/// Resize methods per slice.
 pub struct ResizeMethods {
     pub left: ResizeMethod,
     pub top: ResizeMethod,
