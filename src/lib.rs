@@ -4,6 +4,7 @@ mod error;
 mod nine_slices;
 mod pixel_type;
 mod rect;
+mod resize_method;
 
 use blittle::{ClippedRect, PositionU, Size, blit, get_index};
 pub use border_offsets::BorderOffsets;
