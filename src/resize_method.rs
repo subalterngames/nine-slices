@@ -1,11 +1,11 @@
+use crate::Rect;
 use crate::nine_slices::NineSlices;
-use crate::{NineSlicedSprite, Rect};
 use blittle::get_index;
 
-#[derive(Copy, Clone, Eq, PartialEq, Debug)]
+#[derive(Clone, Eq, PartialEq, Debug)]
 pub enum ResizeMethod {
     /// Do this if all pixels are the same.
-    Fill,
+    Fill(Vec<u8>),
     Resize,
 }
 
@@ -22,7 +22,11 @@ impl ResizeMethod {
                 color == &src[c0..c0 + stride]
             })
         });
-        if all { Self::Fill } else { Self::Resize }
+        if all {
+            Self::Fill(color.to_vec())
+        } else {
+            Self::Resize
+        }
     }
 }
 
@@ -60,7 +64,7 @@ mod tests {
             right: 32,
             bottom: 32,
         };
-        /*
+
         let sprite = NineSlicedSprite::from_png(
             Cursor::new(include_bytes!("../test_files/src/stretch.png")),
             slices,
@@ -80,7 +84,7 @@ mod tests {
         {
             let method =
                 ResizeMethod::new(slice, sprite.slices.size.w, sprite.image.buffer(), stride);
-            debug_assert_eq!(method, ResizeMethod::Fill, "{i}");
+            debug_assert!(matches!(method, ResizeMethod::Fill(_)), "{i}");
         }
 
         let method = ResizeMethod::new(
@@ -90,8 +94,6 @@ mod tests {
             stride,
         );
         assert_eq!(method, ResizeMethod::Resize);
-
-         */
 
         let sprite = NineSlicedSprite::from_png(
             Cursor::new(include_bytes!("../test_files/src/repeat.png")),

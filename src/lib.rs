@@ -6,6 +6,7 @@ mod pixel_type;
 mod rect;
 mod resize_method;
 
+use crate::resize_method::ResizeMethod;
 use blittle::{ClippedRect, PositionU, Size, blit, get_index};
 pub use border_offsets::BorderOffsets;
 pub use border_scaling::BorderScaling;
@@ -189,6 +190,7 @@ impl<'s> NineSlicedSprite<'s> {
         // Resize and blit the inner area.
         self.resize_and_blit(
             self.slices.inner,
+            self.resize_methods.inner.clone(),
             Size {
                 w: dst_size.w - (self.slices.top_left.size.w + self.slices.top_right.size.w),
                 h: dst_size.h - (self.slices.top_left.size.h + self.slices.bottom_left.size.h),
@@ -247,36 +249,50 @@ impl<'s> NineSlicedSprite<'s> {
     fn resize_and_blit(
         &mut self,
         src_rect: Rect,
+        method: ResizeMethod,
         resize_to: Size,
         dst_rect: Rect,
         dst: &mut [u8],
     ) -> Result<(), Error> {
-        // Resize.
-        let options = ResizeOptions::new()
-            .crop(
-                src_rect.position.x as f64,
-                src_rect.position.y as f64,
-                src_rect.size.w as f64,
-                src_rect.size.h as f64,
-            )
-            .resize_alg(self.resize_algorithm);
-        let mut resized = Image::new(
-            resize_to.w as u32,
-            resize_to.h as u32,
-            self.pixel_type.fast_image_resize,
-        );
-        self.resizer
-            .resize(&self.image, &mut resized, Some(&options))
-            .map_err(Error::Resize)?;
-        // Blit.
         let clipped_rect = ClippedRect::new(dst_rect.position.into(), dst_rect.size, resize_to)
             .ok_or(Error::InvalidClippedRect)?;
-        blit(
-            resized.buffer(),
-            dst,
-            &clipped_rect,
-            &self.pixel_type.blittle,
-        );
+        match method {
+            ResizeMethod::Fill(color) => {
+                // Get a buffer filled with the color.
+                // Flatten it into a 1D byte array.
+                let src = vec![color; resize_to.w * resize_to.h]
+                    .into_iter()
+                    .flatten()
+                    .collect::<Vec<u8>>();
+                // Blit the byte array.
+                blit(&src, dst, &clipped_rect, &self.pixel_type.blittle);
+            }
+            ResizeMethod::Resize => {
+                // Resize.
+                let options = ResizeOptions::new()
+                    .crop(
+                        src_rect.position.x as f64,
+                        src_rect.position.y as f64,
+                        src_rect.size.w as f64,
+                        src_rect.size.h as f64,
+                    )
+                    .resize_alg(self.resize_algorithm);
+                let mut resized = Image::new(
+                    resize_to.w as u32,
+                    resize_to.h as u32,
+                    self.pixel_type.fast_image_resize,
+                );
+                self.resizer
+                    .resize(&self.image, &mut resized, Some(&options))
+                    .map_err(Error::Resize)?;
+                blit(
+                    resized.buffer(),
+                    dst,
+                    &clipped_rect,
+                    &self.pixel_type.blittle,
+                );
+            }
+        }
         Ok(())
     }
 
@@ -293,6 +309,7 @@ impl<'s> NineSlicedSprite<'s> {
 
         self.resize_and_blit(
             self.slices.top,
+            self.resize_methods.top.clone(),
             Size {
                 w,
                 h: self.slices.top.size.h,
@@ -306,6 +323,7 @@ impl<'s> NineSlicedSprite<'s> {
 
         self.resize_and_blit(
             self.slices.right,
+            self.resize_methods.right.clone(),
             Size {
                 w: self.slices.right.size.w,
                 h,
@@ -322,6 +340,7 @@ impl<'s> NineSlicedSprite<'s> {
 
         self.resize_and_blit(
             self.slices.bottom,
+            self.resize_methods.bottom.clone(),
             Size {
                 w,
                 h: self.slices.bottom.size.h,
@@ -338,6 +357,7 @@ impl<'s> NineSlicedSprite<'s> {
 
         self.resize_and_blit(
             self.slices.left,
+            self.resize_methods.left.clone(),
             Size {
                 w: self.slices.left.size.w,
                 h,

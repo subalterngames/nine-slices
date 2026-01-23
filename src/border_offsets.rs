@@ -18,6 +18,8 @@ use blittle::Size;
 /// Assuming that the bitmap is 16x16 pixels, this is a valid `BorderOffsets`:
 ///
 /// ```
+/// use nine_slice::BorderOffsets;
+///
 /// _ = BorderOffsets {
 ///     left: 2,
 ///     top: 1,
@@ -29,6 +31,8 @@ use blittle::Size;
 /// And this is an *invalid* `BorderOffsets`:
 ///
 /// ```
+/// use nine_slice::BorderOffsets;
+///
 /// _ = BorderOffsets {
 ///     left: 0, // Must be greater than 0
 ///     top: 12,
@@ -64,6 +68,8 @@ impl BorderOffsets {
             && self.left > 0
             && self.bottom > 0
             && self.right > 0
+            && self.bottom < size.h
+            && self.right < size.w
             && self.top < size.h - self.bottom
             && self.left < size.w - self.right
     }
