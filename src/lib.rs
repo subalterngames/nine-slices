@@ -5,7 +5,7 @@ mod nine_slices;
 mod pixel_type;
 mod rect;
 
-use blittle::{ClippedRect, PositionI, PositionU, Size, blit, get_index};
+use blittle::{ClippedRect, PositionU, Size, blit, get_index};
 pub use border_offsets::BorderOffsets;
 pub use border_scaling::BorderScaling;
 pub use error::Error;
@@ -176,8 +176,8 @@ impl<'s> NineSlicedSprite<'s> {
 
         // Resize the borders.
         match &self.border_scaling {
-            BorderScaling::Stretch => self.stretch_edges(width, height, dst_buffer)?,
-            BorderScaling::Repeat => self.repeat_edges(width, height, dst_buffer),
+            BorderScaling::Stretch => self.stretch_borders(width, height, dst_buffer)?,
+            BorderScaling::Repeat => self.repeat_borders(width, height, dst_buffer),
         }
 
         Ok(dst)
@@ -249,9 +249,9 @@ impl<'s> NineSlicedSprite<'s> {
         Ok(())
     }
 
-    /// Resize the edges.
+    /// Resize the borders by stretching them.
     /// `width` and `height` are the dimensions of `dst`.
-    fn stretch_edges(&mut self, width: u32, height: u32, dst: &mut [u8]) -> Result<(), Error> {
+    fn stretch_borders(&mut self, width: u32, height: u32, dst: &mut [u8]) -> Result<(), Error> {
         let total_dst_size = Size {
             w: width as usize,
             h: height as usize,
@@ -321,57 +321,123 @@ impl<'s> NineSlicedSprite<'s> {
         Ok(())
     }
 
-    fn repeat_edges(&mut self, width: u32, height: u32, dst: &mut [u8]) {
+    // Resize by repeatedly blitting the source bitmap's borders.
+    // `width` and `height` are the dimensions of `dst`.
+    fn repeat_borders(&mut self, width: u32, height: u32, dst: &mut [u8]) {
         let dst_w = width as usize;
         let dst_h = height as usize;
-        let border_w = width as usize - (self.slices.top_left.size.w + self.slices.top_right.size.w);
-        //self.repeat_vertical(self.slices.left, height, dst);
-        self.repeat_horizontal(self.slices.top, self.slices.top.position, border_w, dst_w, dst);
-        //self.repeat_vertical(self.slices.right, height, dst);
-        self.repeat_horizontal(self.slices.bottom, PositionU {
-            x: self.slices.bottom.position.x,
-            y: dst_h - self.slices.bottom.size.h
-        }, border_w, dst_w, dst);
+        let border_w = dst_w - (self.slices.top_left.size.w + self.slices.top_right.size.w);
+        let border_h = dst_h - (self.slices.top_left.size.h + self.slices.top_right.size.h);
+        // Left.
+        self.repeat_vertical(
+            self.slices.left,
+            self.slices.left.position,
+            border_h,
+            dst_w,
+            dst,
+        );
+        // Top.
+        self.repeat_horizontal(
+            self.slices.top,
+            self.slices.top.position,
+            border_w,
+            dst_w,
+            dst,
+        );
+        // Right.
+        self.repeat_vertical(
+            self.slices.right,
+            PositionU {
+                x: dst_w - self.slices.right.size.w,
+                y: self.slices.right.position.y,
+            },
+            border_h,
+            dst_w,
+            dst,
+        );
+        // Bottom.
+        self.repeat_horizontal(
+            self.slices.bottom,
+            PositionU {
+                x: self.slices.bottom.position.x,
+                y: dst_h - self.slices.bottom.size.h,
+            },
+            border_w,
+            dst_w,
+            dst,
+        );
     }
 
-    fn repeat_horizontal(&self, src_rect: Rect, dst_position: PositionU, border_w: usize, dst_w: usize, dst: &mut [u8]) {
+    /// Resize a horizontal edge by repeating it.
+    ///
+    /// - `src_rect` is the size of the source slice.
+    /// - `dst_position` is the position of the edge on the `dst` bitmap.
+    /// - `border_w` is the width of the resized border.
+    /// - `dst_w` is the width of `dst`.
+    fn repeat_horizontal(
+        &self,
+        src_rect: Rect,
+        dst_position: PositionU,
+        edge_w: usize,
+        dst_w: usize,
+        dst: &mut [u8],
+    ) {
         let src = self.image.buffer();
         let stride = self.pixel_type.blittle.stride();
         // Rows.
         for y in 0..src_rect.size.h {
+            // The y coordinate on the source bitmap.
             let src_y = src_rect.position.y + y;
-            // Source slice.
+            // The starting index in the source slice.
             let s0 = get_index(src_rect.position.x, src_y, self.slices.size.w, stride);
-
+            // The y coordinate on the destination bitmap.
             let dst_y = dst_position.y + y;
-            // Destination slice.
+            // The destination slice's start and end indices.
             let d0 = get_index(dst_position.x, dst_y, dst_w, stride);
-            let d1 = get_index(dst_position.x + border_w, dst_y, dst_w, stride);
-            dst[d0..d1].chunks_mut(src_rect.size.w * stride).for_each(|chunk| {
-                chunk.copy_from_slice(&src[s0..s0 + chunk.len()]);
-            });
+            let d1 = get_index(dst_position.x + edge_w, dst_y, dst_w, stride);
+            // Blit slices of `src` onto chunks of `dst`.
+            dst[d0..d1]
+                .chunks_mut(src_rect.size.w * stride)
+                .for_each(|chunk| {
+                    chunk.copy_from_slice(&src[s0..s0 + chunk.len()]);
+                });
         }
     }
 
-    fn repeat_vertical(&self, src_rect: Rect, height: u32, dst: &mut [u8]) {
-        let size = Size {
-            w: src_rect.size.w,
-            h: height as usize,
-        };
-        let x = src_rect.position.x.cast_signed();
-        let mut y = src_rect.position.y;
+    /// Resize a vertical edge by repeating it.
+    ///
+    /// - `src_rect` is the size of the source slice.
+    /// - `dst_position` is the position of the edge on the `dst` bitmap.
+    /// - `border_h` is the width of the resized border.
+    /// - `dst_w` is the width of `dst`.
+    fn repeat_vertical(
+        &self,
+        src_rect: Rect,
+        dst_position: PositionU,
+        border_h: usize,
+        dst_w: usize,
+        dst: &mut [u8],
+    ) {
         let src = self.image.buffer();
-        while let Some(mut rect) = ClippedRect::new(
-            PositionI {
-                x,
-                y: y.cast_signed(),
-            },
-            size,
-            self.slices.size,
-        ) {
-            rect.set_src_rect(src_rect.position, src_rect.size);
-            blit(src, dst, &rect, &self.pixel_type.blittle);
-            y += rect.src_size_clipped.h;
+        let stride = self.pixel_type.blittle.stride();
+        for y in 0..border_h {
+            // The y coordinate on the destination bitmap.
+            let dst_y = dst_position.y + y;
+            // The y coordinate on the source bitmap. Use modulus division to repeat the blit.
+            let src_y = dst_y % src_rect.size.h;
+            // Source horizontal slice.
+            let s0 = get_index(src_rect.position.x, src_y, self.slices.size.w, stride);
+            let s1 = get_index(
+                src_rect.position.x + src_rect.size.w,
+                src_y,
+                self.slices.size.w,
+                stride,
+            );
+            // Destination horizontal slice.
+            let d0 = get_index(dst_position.x, dst_y, dst_w, stride);
+            let d1 = get_index(dst_position.x + src_rect.size.w, dst_y, dst_w, stride);
+            // Blit.
+            dst[d0..d1].copy_from_slice(&src[s0..s1]);
         }
     }
 }
@@ -392,7 +458,11 @@ mod tests {
                 bottom: 32,
             };
             let mut sprite = NineSlicedSprite::from_png(
-                Cursor::new(include_bytes!(concat!("../test_files/src/", $filename, ".png"))),
+                Cursor::new(include_bytes!(concat!(
+                    "../test_files/src/",
+                    $filename,
+                    ".png"
+                ))),
                 slices,
                 BorderScaling::$scaling,
             )
