@@ -1,8 +1,8 @@
 mod border_offsets;
 mod border_scaling;
 mod error;
-mod fill;
 mod nine_slices;
+mod pixel_color;
 mod pixel_type;
 mod rect;
 mod resize_method;

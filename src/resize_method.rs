@@ -1,25 +1,25 @@
 use crate::Rect;
-use crate::fill::FillColor;
 use crate::nine_slices::NineSlices;
+use crate::pixel_color::PixelColor;
 use crate::pixel_type::PixelType;
 use blittle::PositionU;
 
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub enum ResizeMethod {
     /// Do this if all pixels are the same.
-    Fill(FillColor),
+    Fill(PixelColor),
     Resize,
 }
 
 impl ResizeMethod {
     pub fn new(slice: &Rect, w: usize, pixel_type: &PixelType, src: &[u8]) -> Self {
         // The top-left pixel.
-        let color = FillColor::from_pixel(slice.position, w, pixel_type, src);
+        let color = PixelColor::at_position(slice.position, w, pixel_type, src);
         // Are all pixels the same color?
         let all = (slice.position.y..slice.position.y + slice.size.h).all(|y| {
             (slice.position.x..slice.position.x + slice.size.w).all(|x| {
                 // Get the color and match it.
-                color == FillColor::from_pixel(PositionU { x, y }, w, pixel_type, src)
+                color == PixelColor::at_position(PositionU { x, y }, w, pixel_type, src)
             })
         });
         if all { Self::Fill(color) } else { Self::Resize }
