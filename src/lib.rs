@@ -13,8 +13,7 @@ pub use error::Error;
 #[cfg(feature = "png")]
 pub use error::PngError;
 pub use fast_image_resize;
-use fast_image_resize::images::Image;
-use fast_image_resize::{ResizeAlg, ResizeOptions, Resizer};
+use fast_image_resize::{ResizeAlg, ResizeOptions, Resizer, images::Image};
 use nine_slices::NineSlices;
 use pixel_type::PixelType;
 pub use rect::Rect;
