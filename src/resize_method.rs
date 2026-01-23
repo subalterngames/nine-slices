@@ -11,14 +11,12 @@ pub enum ResizeMethod {
 impl ResizeMethod {
     pub fn new(slice: &Rect, w: usize, src: &[u8], stride: usize) -> Self {
         let c0 = get_index(slice.position.x, slice.position.y, w, stride);
-        let c1 = get_index(slice.position.x + 1, slice.position.y, w, stride);
-        let color = &src[c0..c1];
+        let color = &src[c0..c0 + stride];
         let all = (slice.position.y..slice.position.y + slice.size.h)
             .zip(slice.position.x..slice.position.x + slice.size.w)
-            .all(|(x, y)| {
+            .all(|(y, x)| {
                 let c0 = get_index(x, y, w, stride);
-                let c1 = get_index(x + 1, y, w, stride);
-                color == &src[c0..c1]
+                color == &src[c0..c0 + stride]
             });
         if all { Self::Fill } else { Self::Resize }
     }
@@ -54,15 +52,18 @@ mod tests {
         .unwrap();
         let stride = sprite.pixel_type.blittle.stride();
 
-        for slice in [
+        for (i, slice) in [
             &sprite.slices.left,
             &sprite.slices.top,
             &sprite.slices.right,
             &sprite.slices.bottom,
-        ] {
+        ]
+        .into_iter()
+        .enumerate()
+        {
             let method =
                 ResizeMethod::new(slice, sprite.slices.size.w, sprite.image.buffer(), stride);
-            assert_eq!(method, ResizeMethod::Fill);
+            debug_assert_eq!(method, ResizeMethod::Fill, "{i}");
         }
 
         let method = ResizeMethod::new(
@@ -80,16 +81,19 @@ mod tests {
         )
         .unwrap();
         let stride = sprite.pixel_type.blittle.stride();
-        for slice in [
+        for (i, slice) in [
             &sprite.slices.left,
             &sprite.slices.top,
             &sprite.slices.right,
             &sprite.slices.bottom,
             &sprite.slices.inner,
-        ] {
+        ]
+        .into_iter()
+        .enumerate()
+        {
             let method =
                 ResizeMethod::new(slice, sprite.slices.size.w, sprite.image.buffer(), stride);
-            assert_eq!(method, ResizeMethod::Resize);
+            debug_assert_eq!(method, ResizeMethod::Resize, "{i}");
         }
     }
 }
