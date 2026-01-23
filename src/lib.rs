@@ -7,22 +7,22 @@ mod rect;
 mod resize_method;
 
 use crate::resize_method::ResizeMethod;
-use blittle::{ClippedRect, PositionU, Size, blit, get_index};
+use blittle::*;
 pub use border_offsets::BorderOffsets;
 pub use border_scaling::BorderScaling;
 pub use error::Error;
 #[cfg(feature = "png")]
 pub use error::PngError;
 pub use fast_image_resize;
-use fast_image_resize::images::Image;
-use fast_image_resize::{ResizeAlg, ResizeOptions, Resizer};
+use fast_image_resize::{ResizeAlg, ResizeOptions, Resizer, images::Image};
 use nine_slices::NineSlices;
 use pixel_type::PixelType;
-pub use rect::Rect;
+use rect::Rect;
 use resize_method::ResizeMethods;
 #[cfg(feature = "png")]
 use std::io::{BufRead, Seek, Write};
 
+/// A sprite sliced into a 3x3 grid that can be resized without distorting the corners.
 pub struct NineSlicedSprite<'s> {
     image: Image<'s>,
     pixel_type: PixelType,
@@ -34,8 +34,7 @@ pub struct NineSlicedSprite<'s> {
 }
 
 impl<'s> NineSlicedSprite<'s> {
-    /// Slice an in-memory `image` using `offsets`.
-    /// `border_scaling` defines how borders are scaled.
+    /// Slice `image` into a 3x3 grid using `offsets`.
     pub fn new(
         image: Image<'s>,
         offsets: BorderOffsets,
@@ -63,8 +62,7 @@ impl<'s> NineSlicedSprite<'s> {
         })
     }
 
-    /// Load a .png file and then slice it using `offsets`.
-    /// `border_scaling` defines how borders are scaled.
+    /// Load a .png file and then slice it into a 3x3 grid using `offsets`.
     #[cfg(feature = "png")]
     pub fn from_png<R: BufRead + Seek>(
         r: R,
