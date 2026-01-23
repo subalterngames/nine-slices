@@ -18,6 +18,7 @@ use fast_image_resize::{ResizeAlg, ResizeOptions, Resizer};
 use nine_slices::NineSlices;
 use pixel_type::PixelType;
 pub use rect::Rect;
+use resize_method::ResizeMethods;
 #[cfg(feature = "png")]
 use std::io::{BufRead, Seek, Write};
 
@@ -28,6 +29,7 @@ pub struct NineSlicedSprite<'s> {
     border_scaling: BorderScaling,
     resizer: Resizer,
     resize_algorithm: ResizeAlg,
+    resize_methods: ResizeMethods,
 }
 
 impl<'s> NineSlicedSprite<'s> {
@@ -43,6 +45,12 @@ impl<'s> NineSlicedSprite<'s> {
             w: image.width() as usize,
             h: image.height() as usize,
         })?;
+        let resize_methods = ResizeMethods::new(
+            &slices,
+            image.width() as usize,
+            image.buffer(),
+            pixel_type.blittle.stride(),
+        );
         Ok(Self {
             image,
             pixel_type,
@@ -50,6 +58,7 @@ impl<'s> NineSlicedSprite<'s> {
             border_scaling,
             resizer: Resizer::new(),
             resize_algorithm: ResizeAlg::default(),
+            resize_methods,
         })
     }
 
@@ -91,6 +100,13 @@ impl<'s> NineSlicedSprite<'s> {
             h: image.height() as usize,
         })?;
 
+        let resize_methods = ResizeMethods::new(
+            &slices,
+            image.width() as usize,
+            image.buffer(),
+            pixel_type.blittle.stride(),
+        );
+
         Ok(Self {
             image,
             pixel_type,
@@ -98,6 +114,7 @@ impl<'s> NineSlicedSprite<'s> {
             border_scaling,
             resizer: Resizer::new(),
             resize_algorithm: ResizeAlg::default(),
+            resize_methods,
         })
     }
 
