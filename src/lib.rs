@@ -19,6 +19,7 @@ use rect::Rect;
 #[cfg(feature = "png")]
 use std::io::{BufRead, Seek, Write};
 
+/// A sprite sliced into a 3x3 grid that can be resized without distorting the corners.
 pub struct NineSlicedSprite<'s> {
     image: Image<'s>,
     pixel_type: PixelType,
@@ -29,8 +30,7 @@ pub struct NineSlicedSprite<'s> {
 }
 
 impl<'s> NineSlicedSprite<'s> {
-    /// Slice an in-memory `image` using `offsets`.
-    /// `border_scaling` defines how borders are scaled.
+    /// Slice `image` into a 3x3 grid using `offsets`.
     pub fn new(
         image: Image<'s>,
         offsets: BorderOffsets,
@@ -51,8 +51,7 @@ impl<'s> NineSlicedSprite<'s> {
         })
     }
 
-    /// Load a .png file and then slice it using `offsets`.
-    /// `border_scaling` defines how borders are scaled.
+    /// Load a .png file and then slice it into a 3x3 grid using `offsets`.
     #[cfg(feature = "png")]
     pub fn from_png<R: BufRead + Seek>(
         r: R,
@@ -225,6 +224,7 @@ impl<'s> NineSlicedSprite<'s> {
         Ok(())
     }
 
+    /// Resize a slice of `self.image` defined by `src_rect` and blit it to `dst`.
     fn resize_and_blit(
         &mut self,
         src_rect: Rect,
