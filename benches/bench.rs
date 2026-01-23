@@ -10,7 +10,7 @@ fn criterion_benchmark(c: &mut Criterion) {
         bottom: 32,
     };
     let mut sprite = NineSlicedSprite::from_png(
-        Cursor::new(include_bytes!("../test_files/test_image.png")),
+        Cursor::new(include_bytes!("../test_files/stretch.png")),
         slices,
         BorderScaling::Stretch,
     )

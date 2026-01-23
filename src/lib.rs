@@ -383,29 +383,40 @@ mod tests {
     use std::fs::File;
     use std::io::{BufWriter, Cursor};
 
+    macro_rules! resize {
+        ($src:literal, $dst:literal, $scaling:ident) => {{
+            let slices = BorderOffsets {
+                left: 32,
+                top: 32,
+                right: 32,
+                bottom: 32,
+            };
+            let mut sprite = NineSlicedSprite::from_png(
+                Cursor::new(include_bytes!($src)),
+                slices,
+                BorderScaling::$scaling,
+            )
+            .unwrap();
+
+            let width = 1024;
+            let height = 768;
+            let image = sprite.resize(width, height).unwrap();
+
+            NineSlicedSprite::write(
+                &image,
+                BufWriter::new(File::create(format!("test_files/{}.png", $dst)).unwrap()),
+            )
+            .unwrap();
+        }};
+    }
+
     #[test]
-    fn test_resize() {
-        let slices = BorderOffsets {
-            left: 32,
-            top: 32,
-            right: 32,
-            bottom: 32,
-        };
-        let mut sprite = NineSlicedSprite::from_png(
-            Cursor::new(include_bytes!("../test_files/test_image.png")),
-            slices,
-            BorderScaling::Repeat,
-        )
-        .unwrap();
+    fn test_stretch() {
+        resize!("../test_files/stretch.png", "stretch", Stretch);
+    }
 
-        let width = 1024;
-        let height = 768;
-        let image = sprite.resize(width, height).unwrap();
-
-        NineSlicedSprite::write(
-            &image,
-            BufWriter::new(File::create("test_files/resized.png").unwrap()),
-        )
-        .unwrap();
+    #[test]
+    fn test_repeat() {
+        resize!("../test_files/repeat.png", "repeat", Repeat);
     }
 }
