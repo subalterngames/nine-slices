@@ -322,30 +322,32 @@ impl<'s> NineSlicedSprite<'s> {
     }
 
     fn repeat_edges(&mut self, width: u32, height: u32, dst: &mut [u8]) {
+        let dst_w = width as usize;
+        let dst_h = height as usize;
         let border_w = width as usize - (self.slices.top_left.size.w + self.slices.top_right.size.w);
         //self.repeat_vertical(self.slices.left, height, dst);
-        self.repeat_horizontal(self.slices.top, self.slices.top.position, border_w, width as usize, dst);
+        self.repeat_horizontal(self.slices.top, self.slices.top.position, border_w, dst_w, dst);
         //self.repeat_vertical(self.slices.right, height, dst);
-        //self.repeat_horizontal(self.slices.bottom, width, dst);
+        self.repeat_horizontal(self.slices.bottom, PositionU {
+            x: self.slices.bottom.position.x,
+            y: dst_h - self.slices.bottom.size.h
+        }, border_w, dst_w, dst);
     }
 
     fn repeat_horizontal(&self, src_rect: Rect, dst_position: PositionU, border_w: usize, dst_w: usize, dst: &mut [u8]) {
         let src = self.image.buffer();
         let stride = self.pixel_type.blittle.stride();
         // Rows.
-        for y in src_rect.position.y..src_rect.position.y + src_rect.size.h {
+        for y in 0..src_rect.size.h {
+            let src_y = src_rect.position.y + y;
             // Source slice.
-            let s0 = get_index(src_rect.position.x, y, self.slices.size.w, stride);
-            let s1 = get_index(src_rect.position.x + src_rect.size.w, y, self.slices.size.w, stride);
+            let s0 = get_index(src_rect.position.x, src_y, self.slices.size.w, stride);
 
-
+            let dst_y = dst_position.y + y;
             // Destination slice.
-            let d0 = get_index(dst_position.x, y, dst_w, stride);
-            let d1 = get_index(dst_position.x + border_w, y, dst_w, stride);
-            println!("{d0} {d1} {}", d1 - d0);
+            let d0 = get_index(dst_position.x, dst_y, dst_w, stride);
+            let d1 = get_index(dst_position.x + border_w, dst_y, dst_w, stride);
             dst[d0..d1].chunks_mut(src_rect.size.w * stride).for_each(|chunk| {
-                println!("{s0} {s1} {}", s1 - s0);
-                println!("{}", chunk.len());
                 chunk.copy_from_slice(&src[s0..s0 + chunk.len()]);
             });
         }
