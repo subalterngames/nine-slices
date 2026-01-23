@@ -5,7 +5,8 @@ mod nine_slices;
 mod pixel_type;
 mod rect;
 
-use blittle::{ClippedRect, PositionU, Size, blit, get_index};
+pub use blittle;
+use blittle::*;
 pub use border_offsets::BorderOffsets;
 pub use border_scaling::BorderScaling;
 pub use error::Error;

@@ -15,26 +15,40 @@ use blittle::Size;
 /// - Must not cross each other on the bitmap
 ///
 ///
-/// Assuming that the bitmap is 16x16 pixels, this is a valid `BorderOffsets`:
+/// This is a valid `BorderOffsets`:
 ///
 /// ```
-/// _ = BorderOffsets {
+/// use nine_slice::blittle::Size;
+/// use nine_slice::BorderOffsets;
+///
+/// let size = Size { w: 12, h: 12 };
+///
+/// let offsets = BorderOffsets {
 ///     left: 2,
 ///     top: 1,
 ///     right: 3,
 ///     bottom: 8
-/// }
+/// };
+///
+/// assert!(offsets.is_valid(&size));
 /// ```
 ///
 /// And this is an *invalid* `BorderOffsets`:
 ///
 /// ```
-/// _ = BorderOffsets {
+/// use nine_slice::blittle::Size;
+/// use nine_slice::BorderOffsets;
+///
+/// let size = Size { w: 12, h: 12 };
+///
+/// let offsets = BorderOffsets {
 ///     left: 0, // Must be greater than 0
 ///     top: 12,
 ///     right: 20, // Must be within the bounds of the bitmap,
 ///     bottom: 5, // Must not cross each other on the bitmap
-/// }
+/// };
+///
+/// assert!(!offsets.is_valid(&size));
 /// ```
 #[derive(Copy, Clone, Eq, PartialEq, Debug)]
 pub struct BorderOffsets {
@@ -64,6 +78,8 @@ impl BorderOffsets {
             && self.left > 0
             && self.bottom > 0
             && self.right > 0
+            && self.bottom < size.h
+            && self.right < size.w
             && self.top < size.h - self.bottom
             && self.left < size.w - self.right
     }
