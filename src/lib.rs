@@ -13,7 +13,7 @@ pub use error::Error;
 pub use error::PngError;
 pub use fast_image_resize;
 use fast_image_resize::images::Image;
-use fast_image_resize::{ResizeOptions, Resizer};
+use fast_image_resize::{ResizeAlg, ResizeOptions, Resizer};
 use nine_slices::NineSlices;
 use pixel_type::PixelType;
 pub use rect::Rect;
@@ -26,6 +26,7 @@ pub struct NineSlicedSprite<'s> {
     slices: NineSlices,
     border_scaling: BorderScaling,
     resizer: Resizer,
+    resize_algorithm: ResizeAlg,
 }
 
 impl<'s> NineSlicedSprite<'s> {
@@ -47,6 +48,7 @@ impl<'s> NineSlicedSprite<'s> {
             slices,
             border_scaling,
             resizer: Resizer::new(),
+            resize_algorithm: ResizeAlg::default(),
         })
     }
 
@@ -94,7 +96,16 @@ impl<'s> NineSlicedSprite<'s> {
             slices,
             border_scaling,
             resizer: Resizer::new(),
+            resize_algorithm: ResizeAlg::default(),
         })
+    }
+
+    /// Set the resize algorithm.
+    ///
+    /// The default algorithm is Lanczos3, which is slow but results in a high-quality resized image.
+    /// The fastest option, with the worst quality, is `ResizeAlg::Nearest`.
+    pub const fn set_resize_algorithm(&mut self, resize_algorithm: ResizeAlg) {
+        self.resize_algorithm = resize_algorithm;
     }
 
     /// Resize the sprite to dimensions `(width, height)`.
@@ -223,12 +234,14 @@ impl<'s> NineSlicedSprite<'s> {
         dst: &mut [u8],
     ) -> Result<(), Error> {
         // Resize.
-        let options = ResizeOptions::new().crop(
-            src_rect.position.x as f64,
-            src_rect.position.y as f64,
-            src_rect.size.w as f64,
-            src_rect.size.h as f64,
-        );
+        let options = ResizeOptions::new()
+            .crop(
+                src_rect.position.x as f64,
+                src_rect.position.y as f64,
+                src_rect.size.w as f64,
+                src_rect.size.h as f64,
+            )
+            .resize_alg(self.resize_algorithm);
         let mut resized = Image::new(
             resize_to.w as u32,
             resize_to.h as u32,
