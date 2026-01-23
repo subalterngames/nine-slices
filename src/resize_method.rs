@@ -1,4 +1,4 @@
-use crate::Rect;
+use crate::{NineSlicedSprite, Rect};
 use blittle::get_index;
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug)]
@@ -31,6 +31,21 @@ pub struct ResizeMethods {
     pub right: ResizeMethod,
     pub bottom: ResizeMethod,
     pub inner: ResizeMethod,
+}
+
+impl ResizeMethods {
+    pub fn new(slices: &NineSlicedSprite) -> Self {
+        let w = slices.slices.size.w;
+        let src = slices.image.buffer();
+        let stride = slices.pixel_type.blittle.stride();
+        Self {
+            left: ResizeMethod::new(&slices.slices.left, w, src, stride),
+            top: ResizeMethod::new(&slices.slices.top, w, src, stride),
+            right: ResizeMethod::new(&slices.slices.right, w, src, stride),
+            bottom: ResizeMethod::new(&slices.slices.bottom, w, src, stride),
+            inner: ResizeMethod::new(&slices.slices.inner, w, src, stride),
+        }
+    }
 }
 
 #[cfg(test)]
