@@ -5,7 +5,6 @@ mod nine_slices;
 mod pixel_type;
 mod rect;
 
-pub use blittle;
 use blittle::*;
 pub use border_offsets::BorderOffsets;
 pub use border_scaling::BorderScaling;
@@ -16,7 +15,7 @@ pub use fast_image_resize;
 use fast_image_resize::{ResizeAlg, ResizeOptions, Resizer, images::Image};
 use nine_slices::NineSlices;
 use pixel_type::PixelType;
-pub use rect::Rect;
+use rect::Rect;
 #[cfg(feature = "png")]
 use std::io::{BufRead, Seek, Write};
 
