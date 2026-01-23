@@ -1,32 +1,28 @@
 use crate::Rect;
+use crate::fill::FillColor;
 use crate::nine_slices::NineSlices;
-use blittle::get_index;
+use crate::pixel_type::PixelType;
+use blittle::PositionU;
 
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub enum ResizeMethod {
     /// Do this if all pixels are the same.
-    Fill(Vec<u8>),
+    Fill(FillColor),
     Resize,
 }
 
 impl ResizeMethod {
-    pub fn new(slice: &Rect, w: usize, src: &[u8], stride: usize) -> Self {
-        // The index of the start of the top-left pixel.
-        let c0 = get_index(slice.position.x, slice.position.y, w, stride);
+    pub fn new(slice: &Rect, w: usize, pixel_type: &PixelType, src: &[u8]) -> Self {
         // The top-left pixel.
-        let color = &src[c0..c0 + stride];
+        let color = FillColor::from_pixel(slice.position, w, pixel_type, src);
         // Are all pixels the same color?
         let all = (slice.position.y..slice.position.y + slice.size.h).all(|y| {
             (slice.position.x..slice.position.x + slice.size.w).all(|x| {
-                let c0 = get_index(x, y, w, stride);
-                color == &src[c0..c0 + stride]
+                // Get the color and match it.
+                color == FillColor::from_pixel(PositionU { x, y }, w, pixel_type, src)
             })
         });
-        if all {
-            Self::Fill(color.to_vec())
-        } else {
-            Self::Resize
-        }
+        if all { Self::Fill(color) } else { Self::Resize }
     }
 }
 
@@ -39,13 +35,13 @@ pub struct ResizeMethods {
 }
 
 impl ResizeMethods {
-    pub fn new(slices: &NineSlices, w: usize, src: &[u8], stride: usize) -> Self {
+    pub fn new(slices: &NineSlices, w: usize, pixel_type: &PixelType, src: &[u8]) -> Self {
         Self {
-            left: ResizeMethod::new(&slices.left, w, src, stride),
-            top: ResizeMethod::new(&slices.top, w, src, stride),
-            right: ResizeMethod::new(&slices.right, w, src, stride),
-            bottom: ResizeMethod::new(&slices.bottom, w, src, stride),
-            inner: ResizeMethod::new(&slices.inner, w, src, stride),
+            left: ResizeMethod::new(&slices.left, w, pixel_type, src),
+            top: ResizeMethod::new(&slices.top, w, pixel_type, src),
+            right: ResizeMethod::new(&slices.right, w, pixel_type, src),
+            bottom: ResizeMethod::new(&slices.bottom, w, pixel_type, src),
+            inner: ResizeMethod::new(&slices.inner, w, pixel_type, src),
         }
     }
 }
@@ -71,7 +67,6 @@ mod tests {
             BorderScaling::Stretch,
         )
         .unwrap();
-        let stride = sprite.pixel_type.blittle.stride();
 
         for (i, slice) in [
             &sprite.slices.left,
@@ -82,16 +77,20 @@ mod tests {
         .into_iter()
         .enumerate()
         {
-            let method =
-                ResizeMethod::new(slice, sprite.slices.size.w, sprite.image.buffer(), stride);
+            let method = ResizeMethod::new(
+                slice,
+                sprite.slices.size.w,
+                &sprite.pixel_type,
+                sprite.image.buffer(),
+            );
             debug_assert!(matches!(method, ResizeMethod::Fill(_)), "{i}");
         }
 
         let method = ResizeMethod::new(
             &sprite.slices.inner,
             sprite.slices.size.w,
+            &sprite.pixel_type,
             sprite.image.buffer(),
-            stride,
         );
         assert_eq!(method, ResizeMethod::Resize);
 
@@ -101,7 +100,6 @@ mod tests {
             BorderScaling::Stretch,
         )
         .unwrap();
-        let stride = sprite.pixel_type.blittle.stride();
         for (i, slice) in [
             &sprite.slices.left,
             &sprite.slices.top,
@@ -112,8 +110,12 @@ mod tests {
         .into_iter()
         .enumerate()
         {
-            let method =
-                ResizeMethod::new(slice, sprite.slices.size.w, sprite.image.buffer(), stride);
+            let method = ResizeMethod::new(
+                slice,
+                sprite.slices.size.w,
+                &sprite.pixel_type,
+                sprite.image.buffer(),
+            );
             debug_assert_eq!(method, ResizeMethod::Resize, "{i}");
         }
     }

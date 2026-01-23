@@ -46,12 +46,8 @@ impl<'s> NineSlicedSprite<'s> {
             w: image.width() as usize,
             h: image.height() as usize,
         })?;
-        let resize_methods = ResizeMethods::new(
-            &slices,
-            image.width() as usize,
-            image.buffer(),
-            pixel_type.blittle.stride(),
-        );
+        let resize_methods =
+            ResizeMethods::new(&slices, image.width() as usize, &pixel_type, image.buffer());
         Ok(Self {
             image,
             pixel_type,
@@ -100,12 +96,8 @@ impl<'s> NineSlicedSprite<'s> {
             h: image.height() as usize,
         })?;
 
-        let resize_methods = ResizeMethods::new(
-            &slices,
-            image.width() as usize,
-            image.buffer(),
-            pixel_type.blittle.stride(),
-        );
+        let resize_methods =
+            ResizeMethods::new(&slices, image.width() as usize, &pixel_type, image.buffer());
 
         Ok(Self {
             image,
@@ -257,12 +249,7 @@ impl<'s> NineSlicedSprite<'s> {
             .ok_or(Error::InvalidClippedRect)?;
         match method {
             ResizeMethod::Fill(color) => {
-                // Get a buffer filled with the color.
-                // Flatten it into a 1D byte array.
-                let src = vec![color; resize_to.w * resize_to.h]
-                    .into_iter()
-                    .flatten()
-                    .collect::<Vec<u8>>();
+                let src = color.get_filled(resize_to);
                 // Blit the byte array.
                 blit(&src, dst, &clipped_rect, &self.pixel_type.blittle);
             }
