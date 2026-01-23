@@ -5,7 +5,7 @@ mod nine_slices;
 mod pixel_type;
 mod rect;
 
-use blittle::{ClippedRect, PositionI, PositionU, Size, blit};
+use blittle::{ClippedRect, PositionI, PositionU, Size, blit, get_index};
 pub use border_offsets::BorderOffsets;
 pub use border_scaling::BorderScaling;
 pub use error::Error;
@@ -322,34 +322,32 @@ impl<'s> NineSlicedSprite<'s> {
     }
 
     fn repeat_edges(&mut self, width: u32, height: u32, dst: &mut [u8]) {
+        let border_w = width as usize - (self.slices.top_left.size.w + self.slices.top_right.size.w);
         //self.repeat_vertical(self.slices.left, height, dst);
-        self.repeat_horizontal(self.slices.top, width, height, dst);
+        self.repeat_horizontal(self.slices.top, self.slices.top.position, border_w, width as usize, dst);
         //self.repeat_vertical(self.slices.right, height, dst);
         //self.repeat_horizontal(self.slices.bottom, width, dst);
     }
 
-    fn repeat_horizontal(&self, src_rect: Rect, width: u32, height: u32, dst: &mut [u8]) {
-        let size = Size {
-            w: width as usize - (self.slices.top_left.size.w + self.slices.top_right.size.w),
-            h: src_rect.size.h,
-        };
-        let mut x = src_rect.position.x;
-        let y = src_rect.position.y.cast_signed();
+    fn repeat_horizontal(&self, src_rect: Rect, dst_position: PositionU, border_w: usize, dst_w: usize, dst: &mut [u8]) {
         let src = self.image.buffer();
-        while let Some(mut rect) = ClippedRect::new(
-            PositionI {
-                x: x.cast_signed(),
-                y,
-            },
-            self.slices.size,
-            Size {
-                w: width as usize,
-                h: height as usize,
-            },
-        ) {
-            rect.set_src_rect(src_rect.position, src_rect.size);
-            blit(src, dst, &rect, &self.pixel_type.blittle);
-            x += rect.src_size_clipped.w;
+        let stride = self.pixel_type.blittle.stride();
+        // Rows.
+        for y in src_rect.position.y..src_rect.position.y + src_rect.size.h {
+            // Source slice.
+            let s0 = get_index(src_rect.position.x, y, self.slices.size.w, stride);
+            let s1 = get_index(src_rect.position.x + src_rect.size.w, y, self.slices.size.w, stride);
+
+
+            // Destination slice.
+            let d0 = get_index(dst_position.x, y, dst_w, stride);
+            let d1 = get_index(dst_position.x + border_w, y, dst_w, stride);
+            println!("{d0} {d1} {}", d1 - d0);
+            dst[d0..d1].chunks_mut(src_rect.size.w * stride).for_each(|chunk| {
+                println!("{s0} {s1} {}", s1 - s0);
+                println!("{}", chunk.len());
+                chunk.copy_from_slice(&src[s0..s0 + chunk.len()]);
+            });
         }
     }
 
@@ -384,7 +382,7 @@ mod tests {
     use std::io::{BufWriter, Cursor};
 
     macro_rules! resize {
-        ($src:literal, $dst:literal, $scaling:ident) => {{
+        ($filename:literal, $scaling:ident) => {{
             let slices = BorderOffsets {
                 left: 32,
                 top: 32,
@@ -392,7 +390,7 @@ mod tests {
                 bottom: 32,
             };
             let mut sprite = NineSlicedSprite::from_png(
-                Cursor::new(include_bytes!($src)),
+                Cursor::new(include_bytes!(concat!("../test_files/src/", $filename, ".png"))),
                 slices,
                 BorderScaling::$scaling,
             )
@@ -404,7 +402,7 @@ mod tests {
 
             NineSlicedSprite::write(
                 &image,
-                BufWriter::new(File::create(format!("test_files/{}.png", $dst)).unwrap()),
+                BufWriter::new(File::create(format!("test_files/dst/{}.png", $filename)).unwrap()),
             )
             .unwrap();
         }};
@@ -412,11 +410,11 @@ mod tests {
 
     #[test]
     fn test_stretch() {
-        resize!("../test_files/stretch.png", "stretch", Stretch);
+        resize!("stretch", Stretch);
     }
 
     #[test]
     fn test_repeat() {
-        resize!("../test_files/repeat.png", "repeat", Repeat);
+        resize!("repeat", Repeat);
     }
 }
