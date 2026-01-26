@@ -467,7 +467,7 @@ impl<'s> NineSlicedSprite<'s> {
             // The y coordinate on the destination bitmap.
             let dst_y = dst_position.y + y;
             // The y coordinate on the source bitmap. Use modulus division to repeat the blit.
-            let src_y = dst_y % src_rect.size.h;
+            let src_y = src_rect.position.y + dst_y % src_rect.size.h;
             // Source horizontal slice.
             let s0 = get_index(src_rect.position.x, src_y, self.slices.size.w, stride);
             let s1 = get_index(
