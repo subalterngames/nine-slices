@@ -1,17 +1,15 @@
 use crate::pixel_type::PixelType;
 use blittle::{PositionU, Size, get_index};
-use std::slice::from_raw_parts_mut;
+use bytemuck::cast_slice_mut;
 
 macro_rules! fill {
-    ($color:ident, $size:ident, $len:literal) => {{
-        let mut bitmap = vec![0; $size.w * $size.h * $len];
-        let ptr = bitmap.as_mut_ptr().cast::<[u8; $len]>();
-        let len = bitmap.len() / $len;
-        // Technically it's unsafe, but it's used only internally, so it's probably fine.
-        unsafe {
-            from_raw_parts_mut(ptr, len).fill(*$color);
-        }
-        bitmap
+    ($color:ident, $dst:ident, $dst_width:ident, $position:ident, $size:ident, $stride:literal) => {{
+        let dst = cast_slice_mut::<u8, [u8; $stride]>($dst);
+        ($position.y..$position.y + $size.h).for_each(|y| {
+            ($position.x..$position.x + $size.w).for_each(|x| {
+                dst[x + y * $dst_width] = $color;
+            });
+        });
     }};
 }
 
@@ -80,22 +78,20 @@ impl PixelColor {
         }
     }
 
-    pub fn get_filled(&self, size: Size) -> Vec<u8> {
-        let stride = match self {
-            Self::One(_) => 1,
-            Self::Two(_) => 2,
-            Self::Three(_) => 3,
-            Self::Four(_) => 4,
-            Self::Twelve(_) => 12,
-            Self::Sixteen(_) => 16,
-        };
-        match self {
-            Self::One(color) => vec![*color; size.w * size.h * stride],
-            Self::Two(color) => fill!(color, size, 2),
-            Self::Three(color) => fill!(color, size, 3),
-            Self::Four(color) => fill!(color, size, 4),
-            Self::Twelve(color) => fill!(color, size, 12),
-            Self::Sixteen(color) => fill!(color, size, 16),
+    pub fn fill(&self, dst: &mut [u8], dst_width: usize, position: PositionU, size: Size) {
+        match *self {
+            Self::One(color) => {
+                (0..size.h).for_each(|y| {
+                    (position.x..position.x + size.w).for_each(|x| {
+                        dst[x + y * dst_width] = color;
+                    });
+                });
+            }
+            Self::Two(color) => fill!(color, dst, dst_width, position, size, 2),
+            Self::Three(color) => fill!(color, dst, dst_width, position, size, 3),
+            Self::Four(color) => fill!(color, dst, dst_width, position, size, 4),
+            Self::Twelve(color) => fill!(color, dst, dst_width, position, size, 12),
+            Self::Sixteen(color) => fill!(color, dst, dst_width, position, size, 16),
         }
     }
 }

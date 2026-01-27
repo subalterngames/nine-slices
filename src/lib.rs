@@ -309,9 +309,7 @@ impl<'s> NineSlicedSprite<'s> {
             // The slice will sometimes contain a single color.
             // So, let's just create a new bitmap with that color.
             ResizeMethod::Fill(color) => {
-                let src = color.get_filled(resize_to);
-                // Blit the byte array.
-                blit(&src, dst, &clipped_rect, &self.pixel_type.blittle);
+                color.fill(dst, dst_rect.size.w, clipped_rect.dst_position_clipped, resize_to);
             }
             ResizeMethod::Resize => {
                 // Get a new buffer.
