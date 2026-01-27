@@ -49,26 +49,18 @@ impl PixelType {
         }
 
         let fast_image_resize = match color_type {
-            png::ColorType::Grayscale => get_pixel_type(
-                color_type,
-                bit_depth,
-                fast_image_resize::PixelType::U8,
-            ),
-            png::ColorType::GrayscaleAlpha => get_pixel_type(
-                color_type,
-                bit_depth,
-                fast_image_resize::PixelType::U8x2,
-            ),
-            png::ColorType::Rgb => get_pixel_type(
-                color_type,
-                bit_depth,
-                fast_image_resize::PixelType::U8x3,
-            ),
-            png::ColorType::Rgba => get_pixel_type(
-                color_type,
-                bit_depth,
-                fast_image_resize::PixelType::U8x4,
-            ),
+            png::ColorType::Grayscale => {
+                get_pixel_type(color_type, bit_depth, fast_image_resize::PixelType::U8)
+            }
+            png::ColorType::GrayscaleAlpha => {
+                get_pixel_type(color_type, bit_depth, fast_image_resize::PixelType::U8x2)
+            }
+            png::ColorType::Rgb => {
+                get_pixel_type(color_type, bit_depth, fast_image_resize::PixelType::U8x3)
+            }
+            png::ColorType::Rgba => {
+                get_pixel_type(color_type, bit_depth, fast_image_resize::PixelType::U8x4)
+            }
             png::ColorType::Indexed => Err(crate::PngError::IndexedColorType),
         }
         .map_err(Error::Png)?;

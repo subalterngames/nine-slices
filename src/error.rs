@@ -8,6 +8,10 @@ pub enum Error {
     InvalidSlices(BorderOffsets),
     #[error("Failed to create an image from a vec: {0}")]
     FromVec(fast_image_resize::ImageBufferError),
+    #[error("Failed to view destination image from a slice: {0}")]
+    FromSlice(fast_image_resize::ImageBufferError),
+    #[error("Failed to crop destination image: {0}")]
+    Crop(fast_image_resize::CropBoxError),
     #[error("Failed to resize inner area: {0}")]
     Resize(fast_image_resize::ResizeError),
     #[error("Invalid clipped rect")]

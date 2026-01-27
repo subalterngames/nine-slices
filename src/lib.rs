@@ -24,6 +24,7 @@ pub use error::JpgError;
 #[cfg(feature = "png")]
 pub use error::PngError;
 pub use fast_image_resize;
+use fast_image_resize::images::CroppedImageMut;
 use fast_image_resize::{ResizeAlg, ResizeOptions, Resizer, images::Image};
 use nine_slices::NineSlices;
 use pixel_type::PixelType;
@@ -314,11 +315,21 @@ impl<'s> NineSlicedSprite<'s> {
             }
             ResizeMethod::Resize => {
                 // Get a new buffer.
-                let mut resized = Image::new(
+                let mut dst = Image::from_slice_u8(
+                    dst_rect.size.w as u32,
+                    dst_rect.size.h as u32,
+                    dst,
+                    self.pixel_type.fast_image_resize,
+                )
+                .map_err(Error::FromSlice)?;
+                let mut resized = CroppedImageMut::new(
+                    &mut dst,
+                    clipped_rect.dst_position.x.cast_unsigned() as u32,
+                    clipped_rect.dst_position.y.cast_unsigned() as u32,
                     resize_to.w as u32,
                     resize_to.h as u32,
-                    self.pixel_type.fast_image_resize,
-                );
+                )
+                .map_err(Error::Crop)?;
                 // Crop the source image.
                 let options = ResizeOptions::new()
                     .crop(
@@ -332,13 +343,6 @@ impl<'s> NineSlicedSprite<'s> {
                 self.resizer
                     .resize(&self.image, &mut resized, Some(&options))
                     .map_err(Error::Resize)?;
-                // Blit `resized` onto `dst`.
-                blit(
-                    resized.buffer(),
-                    dst,
-                    &clipped_rect,
-                    &self.pixel_type.blittle,
-                );
             }
         }
         Ok(())
