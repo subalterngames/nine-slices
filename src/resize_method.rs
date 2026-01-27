@@ -48,6 +48,7 @@ impl ResizeMethods {
     }
 }
 
+
 #[cfg(test)]
 mod tests {
     use crate::resize_method::ResizeMethod;

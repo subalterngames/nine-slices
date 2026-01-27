@@ -1,4 +1,6 @@
-use crate::{Error, JpgError};
+use crate::Error;
+#[cfg(feature = "jpg")]
+use crate::JpgError;
 use fast_image_resize::images::Image;
 
 #[cfg(feature = "png")]
@@ -13,22 +15,18 @@ pub struct PixelType {
     pub fast_image_resize: fast_image_resize::PixelType,
     #[cfg(feature = "png")]
     pub png: Option<PngPixelType>,
-    #[cfg(feature = "jpg")]
-    pub jpg: Option<jpeg_decoder::PixelFormat>
 }
 
 impl PixelType {
     pub fn new(image: &Image) -> Result<Self, Error> {
         let fast_image_resize = image.pixel_type();
         let blittle = Self::get_blittle_pixel_type(fast_image_resize)?;
-        
+
         Ok(Self {
             blittle,
             fast_image_resize,
             #[cfg(feature = "png")]
             png: Self::get_png_pixel_type(blittle),
-            #[cfg(feature = "jpg")]
-            jpg: Self::get_jpg_pixel_format(blittle)
         })
     }
 
@@ -39,12 +37,10 @@ impl PixelType {
         const fn get_pixel_type(
             color_type: &png::ColorType,
             bit_depth: &png::BitDepth,
-            eight: fast_image_resize::PixelType,
-            sixteen: fast_image_resize::PixelType,
+            pixel_type: fast_image_resize::PixelType,
         ) -> Result<fast_image_resize::PixelType, crate::PngError> {
             match bit_depth {
-                png::BitDepth::Eight => Ok(eight),
-                png::BitDepth::Sixteen => Ok(sixteen),
+                png::BitDepth::Eight => Ok(pixel_type),
                 _ => Err(crate::PngError::InvalidColorBitDepth(
                     *color_type,
                     *bit_depth,
@@ -57,25 +53,21 @@ impl PixelType {
                 color_type,
                 bit_depth,
                 fast_image_resize::PixelType::U8,
-                fast_image_resize::PixelType::U16,
             ),
             png::ColorType::GrayscaleAlpha => get_pixel_type(
                 color_type,
                 bit_depth,
                 fast_image_resize::PixelType::U8x2,
-                fast_image_resize::PixelType::U16x2,
             ),
             png::ColorType::Rgb => get_pixel_type(
                 color_type,
                 bit_depth,
                 fast_image_resize::PixelType::U8x3,
-                fast_image_resize::PixelType::U16x3,
             ),
             png::ColorType::Rgba => get_pixel_type(
                 color_type,
                 bit_depth,
                 fast_image_resize::PixelType::U8x4,
-                fast_image_resize::PixelType::U16x4,
             ),
             png::ColorType::Indexed => Err(crate::PngError::IndexedColorType),
         }
@@ -88,11 +80,10 @@ impl PixelType {
                 color_type: *color_type,
                 bit_depth: *bit_depth,
             }),
-            #[cfg(feature = "jpg")]
-            jpg: Self::get_jpg_pixel_format(blittle)
         })
     }
-    
+
+    #[cfg(feature = "jpg")]
     pub const fn from_jpg(pixel_format: jpeg_decoder::PixelFormat) -> Result<Self, Error> {
         match pixel_format {
             jpeg_decoder::PixelFormat::L8 => Ok(Self {
@@ -103,7 +94,6 @@ impl PixelType {
                     color_type: png::ColorType::Grayscale,
                     bit_depth: png::BitDepth::Eight,
                 }),
-                jpg: Some(pixel_format)
             }),
             jpeg_decoder::PixelFormat::RGB24 => Ok(Self {
                 fast_image_resize: fast_image_resize::PixelType::U8x3,
@@ -113,12 +103,11 @@ impl PixelType {
                     color_type: png::ColorType::Rgb,
                     bit_depth: png::BitDepth::Eight,
                 }),
-                jpg: Some(pixel_format)
             }),
-            other => Err(Error::Jpg(JpgError::JpgPixelFormat(other)))
+            other => Err(Error::Jpg(JpgError::JpgPixelFormat(other))),
         }
     }
-    
+
     const fn get_blittle_pixel_type(
         pixel_type: fast_image_resize::PixelType,
     ) -> Result<blittle::PixelType, Error> {
@@ -133,13 +122,11 @@ impl PixelType {
             other => Err(Error::UnsupportedPixelType(other)),
         }
     }
-    
+
     /// Get a `PngPixelType` from a `blittle::PixelType`.
     /// Some blittle pixel types are not allowed.
     #[cfg(feature = "png")]
-    const fn get_png_pixel_type(
-        pixel_type: blittle::PixelType,
-    ) -> Option<PngPixelType> {
+    const fn get_png_pixel_type(pixel_type: blittle::PixelType) -> Option<PngPixelType> {
         match pixel_type {
             blittle::PixelType::Gr8 => Some(PngPixelType {
                 color_type: png::ColorType::Grayscale,
@@ -157,15 +144,18 @@ impl PixelType {
                 color_type: png::ColorType::Rgba,
                 bit_depth: png::BitDepth::Eight,
             }),
-            _ => None
+            _ => None,
         }
     }
-    
-    const fn get_jpg_pixel_format(blittle: blittle::PixelType) -> Option<jpeg_decoder::PixelFormat> {
-        match blittle {
-            blittle::PixelType::Gr8 => Some(jpeg_decoder::PixelFormat::L8),
-            blittle::PixelType::Rgb8 => Some(jpeg_decoder::PixelFormat::RGB24),
-            _ => None
+
+    #[cfg(feature = "jpg")]
+    pub(crate) const fn get_jpg_encoder_color_type(
+        pixel_type: fast_image_resize::PixelType,
+    ) -> Result<jpeg_encoder::ColorType, JpgError> {
+        match pixel_type {
+            fast_image_resize::PixelType::U8 => Ok(jpeg_encoder::ColorType::Luma),
+            fast_image_resize::PixelType::U8x3 => Ok(jpeg_encoder::ColorType::Rgb),
+            other => Err(JpgError::JpgEncoderPixelFormat(other)),
         }
     }
 }

@@ -19,7 +19,7 @@ pub enum Error {
     Png(PngError),
     #[cfg(feature = "jpg")]
     #[error("{0}")]
-    Jpg(JpgError)
+    Jpg(JpgError),
 }
 
 #[cfg(feature = "png")]
@@ -49,11 +49,11 @@ pub enum JpgError {
     #[error("Failed to get jpg info.")]
     Info,
     #[error("Unsupported pixel format: {:?}", 0)]
-    PixelFormat(PixelType),
+    JpgEncoderPixelFormat(PixelType),
     #[error("Unsupported jpg pixel format: {:?}", 0)]
     JpgPixelFormat(jpeg_decoder::PixelFormat),
     #[error("Failed to decode jpg: {0}")]
     Decode(jpeg_decoder::Error),
     #[error("Failed to encode jpg: {0}")]
-    Encode(jpeg_encoder::EncodingError)
+    Encode(jpeg_encoder::EncodingError),
 }

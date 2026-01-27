@@ -1,3 +1,10 @@
+#![doc = include_str!("../doc/README-rust.md")]
+//!
+#![cfg_attr(all(),
+    doc = embed_doc_image::embed_image!("src", "doc/images/src.png"),
+    doc = embed_doc_image::embed_image!("sliced_and_scaled", "doc/images/sliced_and_scaled.png"),
+    doc = embed_doc_image::embed_image!("scaled", "doc/images/scaled.png"))]
+
 mod border_offsets;
 mod border_scaling;
 mod error;
@@ -12,10 +19,10 @@ use blittle::*;
 pub use border_offsets::BorderOffsets;
 pub use border_scaling::BorderScaling;
 pub use error::Error;
-#[cfg(feature = "png")]
-pub use error::PngError;
 #[cfg(feature = "jpg")]
 pub use error::JpgError;
+#[cfg(feature = "png")]
+pub use error::PngError;
 pub use fast_image_resize;
 use fast_image_resize::{ResizeAlg, ResizeOptions, Resizer, images::Image};
 use nine_slices::NineSlices;
@@ -24,7 +31,6 @@ use rect::Rect;
 use resize_method::ResizeMethods;
 #[cfg(feature = "png")]
 use std::io::{BufRead, Seek, Write};
-use std::io::Read;
 
 /// A sprite sliced into a 3x3 grid that can be resized without distorting the corners.
 pub struct NineSlicedSprite<'s> {
@@ -115,15 +121,27 @@ impl<'s> NineSlicedSprite<'s> {
 
     /// Load a .jpg file and then slice it into a 3x3 grid using `offsets`.
     #[cfg(feature = "jpg")]
-    pub fn from_jpg<R: Read>(r: R, offsets: BorderOffsets,
-                             border_scaling: BorderScaling,) -> Result<Self, Error> {
+    pub fn from_jpg<R: std::io::Read>(
+        r: R,
+        offsets: BorderOffsets,
+        border_scaling: BorderScaling,
+    ) -> Result<Self, Error> {
         let mut decoder = jpeg_decoder::Decoder::new(r);
-       decoder.read_info().map_err(|e| Error::Jpg(JpgError::Read(e)))?;
+        decoder
+            .read_info()
+            .map_err(|e| Error::Jpg(JpgError::Read(e)))?;
         let info = decoder.info().ok_or(Error::Jpg(JpgError::Info))?;
         let pixel_type = PixelType::from_jpg(info.pixel_format)?;
-        let bytes = decoder.decode().map_err(|e| Error::Jpg(JpgError::Read(e)))?;
-        let image = Image::from_vec_u8(info.width as u32, info.height as u32, bytes, pixel_type.fast_image_resize)
-            .map_err(Error::FromVec)?;
+        let bytes = decoder
+            .decode()
+            .map_err(|e| Error::Jpg(JpgError::Read(e)))?;
+        let image = Image::from_vec_u8(
+            info.width as u32,
+            info.height as u32,
+            bytes,
+            pixel_type.fast_image_resize,
+        )
+        .map_err(Error::FromVec)?;
         Self::new(image, offsets, border_scaling)
     }
 
@@ -226,7 +244,9 @@ impl<'s> NineSlicedSprite<'s> {
     #[cfg(feature = "png")]
     pub fn write_png<W: Write>(image: &Image<'_>, w: W) -> Result<(), Error> {
         let pixel_type = PixelType::new(image)?;
-        let png_pixel_type = pixel_type.png.ok_or(Error::UnsupportedPixelType(pixel_type.fast_image_resize))?;
+        let png_pixel_type = pixel_type
+            .png
+            .ok_or(Error::UnsupportedPixelType(pixel_type.fast_image_resize))?;
         let mut encoder = png::Encoder::new(w, image.width(), image.height());
         encoder.set_color(png_pixel_type.color_type);
         encoder.set_depth(png_pixel_type.bit_depth);
@@ -239,18 +259,21 @@ impl<'s> NineSlicedSprite<'s> {
     }
 
     /// Encode `image` as a .jpg
-    /// 
+    ///
     /// `quality` must be between 0 and 100.
     #[cfg(feature = "jpg")]
     pub fn write_jpg<W: Write>(image: &Image<'_>, w: W, quality: u8) -> Result<(), Error> {
         let encoder = jpeg_encoder::Encoder::new(w, quality);
-        let color_type = match image.pixel_type() {
-            fast_image_resize::PixelType::U8 => Ok(jpeg_encoder::ColorType::Luma),
-            fast_image_resize::PixelType::U8x3 => Ok(jpeg_encoder::ColorType::Rgb),
-            fast_image_resize::PixelType::U8x4 => Ok(jpeg_encoder::ColorType::Rgba),
-            other => Err(Error::Jpg(JpgError::PixelFormat(other)))
-        }?;
-        encoder.encode(image.buffer(), image.width() as u16, image.height() as u16, color_type).map_err(|e| Error::Jpg(JpgError::Encode(e)))
+        let color_type =
+            PixelType::get_jpg_encoder_color_type(image.pixel_type()).map_err(Error::Jpg)?;
+        encoder
+            .encode(
+                image.buffer(),
+                image.width() as u16,
+                image.height() as u16,
+                color_type,
+            )
+            .map_err(|e| Error::Jpg(JpgError::Encode(e)))
     }
 
     /// Blit an area of `src` defined by `src_rect` to `dst`.

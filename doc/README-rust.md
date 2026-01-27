@@ -6,19 +6,19 @@ Nine-slice scaling is a common rendering technique used to scale images without 
 
 **Source:**
 
-![An image with simple rounded borders](doc/images/src.png)
+![An image with simple rounded borders][src]
 
 **With `nine-slice`:**
 
-![A scaled image with non-distorted borders and corners](doc/images/sliced_and_scaled.png)
+![A scaled image with non-distorted borders and corners][sliced_and_scaled]
 
 **With standard scaling:**
 
-![A scaled image with stretched borders and corners](doc/images/scaled.png)
+![A scaled image with stretched borders and corners][scaled]
 
 ## Example usage
 
-```rust
+```
 use fast_image_resize::{images::Image, PixelType};
 use nine_slice::*;
 

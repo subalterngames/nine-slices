@@ -9,6 +9,7 @@ categories = ["game-development", "multimedia::images"]
 
 [dependencies]
 blittle = "0.4.3"
+embed-doc-image = "0.1.4"
 fast_image_resize = "6.0.0"
 jpeg-decoder = { version = "0.3.2", optional = true }
 jpeg-encoder = { version = "0.7.0", optional = true}
@@ -19,9 +20,12 @@ thiserror = "2.0.17"
 criterion = "0.8.1"
 
 [features]
-default = ["jpg", "png"]
 jpg = ["dep:jpeg-decoder", "dep:jpeg-encoder"]
 png = ["dep:png"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [[bench]]
 name = "bench"
