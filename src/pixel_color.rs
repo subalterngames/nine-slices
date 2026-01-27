@@ -6,9 +6,9 @@ macro_rules! fill {
     ($color:ident, $dst:ident, $dst_width:ident, $position:ident, $size:ident, $stride:literal) => {{
         let dst = cast_slice_mut::<u8, [u8; $stride]>($dst);
         ($position.y..$position.y + $size.h).for_each(|y| {
-            ($position.x..$position.x + $size.w).for_each(|x| {
-                dst[x + y * $dst_width] = $color;
-            });
+            let i0 = $position.x + y * $dst_width;
+            let i1 = i0 + $size.w;
+            dst[i0..i1].fill($color);
         });
     }};
 }
@@ -82,9 +82,9 @@ impl PixelColor {
         match *self {
             Self::One(color) => {
                 (0..size.h).for_each(|y| {
-                    (position.x..position.x + size.w).for_each(|x| {
-                        dst[x + y * dst_width] = color;
-                    });
+                    let i0 = position.x + y * dst_width;
+                    let i1 = i0 + size.w;
+                    dst[i0..i1].fill(color);
                 });
             }
             Self::Two(color) => fill!(color, dst, dst_width, position, size, 2),
