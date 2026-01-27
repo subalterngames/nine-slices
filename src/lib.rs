@@ -322,6 +322,7 @@ impl<'s> NineSlicedSprite<'s> {
                     self.pixel_type.fast_image_resize,
                 )
                 .map_err(Error::FromSlice)?;
+                // The resized image is a cropped view of the destination image.
                 let mut resized = CroppedImageMut::new(
                     &mut dst,
                     clipped_rect.dst_position.x.cast_unsigned() as u32,
