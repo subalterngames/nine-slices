@@ -68,3 +68,15 @@ let _ = sprite.resize(1024, 768).unwrap();
 | `PixelType::F32x2` | No    | No             | No             |
 | `PixelType::F32x3` | Yes   | No             | No             |
 | `PixelType::F32x4` | Yes   | No             | No             |
+
+## How it works
+
+100% genuine software rendering. `nine-slice` just does a lot of copy+pasting and resizing with in-memory raw bitmaps. Want to use a GPU instead? Try Bevy.
+
+## Speed
+
+Run `cargo bench --all-features` and find out.
+
+- By default, `BorderScaling::Stretch` and `BorderScaling::Repeat` are approximately the same speed.
+- When using `BorderScaling::Stretch`, you can set the resizing algorithm by calling `sprite.set_resize_algorithm(resize_algorithm)`. The default algorithm yields the highest quality but the worst performance. `ResizeAlg::Nearest` is the worst quality and best performance.
+- When using `BorderScaling::Stretch`, if a non-corner slice of the sprite is entirely one color, `nine-slice` will just set the output image's pixels to the appropriate color, rather than running any resize algorithm at all. This is faster than `ResizeAlg::Nearest` and it's on a per-slice basis. For example, if the top slice is a solid color and the other slices aren't, the top slice will be filled and every other slice will be resized and pasted onto the output image. 
