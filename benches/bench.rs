@@ -1,6 +1,6 @@
 use criterion::{Criterion, criterion_group, criterion_main};
 use fast_image_resize::ResizeAlg;
-use nine_slice::{BorderOffsets, BorderScaling, NineSlicedSprite};
+use nine_slices::{BorderOffsets, BorderScaling, NineSlicedSprite};
 use std::io::Cursor;
 
 fn criterion_benchmark(c: &mut Criterion) {

@@ -18,7 +18,7 @@ use blittle::Size;
 /// This is a valid `BorderOffsets`:
 ///
 /// ```
-/// use nine_slice::BorderOffsets;
+/// use nine_slices::BorderOffsets;
 ///
 /// let width = 12;
 /// let height = 12;
@@ -36,7 +36,7 @@ use blittle::Size;
 /// And this is an *invalid* `BorderOffsets`:
 ///
 /// ```
-/// use nine_slice::BorderOffsets;
+/// use nine_slices::BorderOffsets;
 ///
 /// let width = 12;
 /// let height = 12;

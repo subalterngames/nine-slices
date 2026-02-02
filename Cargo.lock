@@ -367,7 +367,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "nine-slice"
+name = "nine-slices"
 version = "0.1.0"
 dependencies = [
  "blittle",

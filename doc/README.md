@@ -1,4 +1,4 @@
-# nine-slice
+# nine-slices
 
 **Scale images using [nine-slice scaling](https://en.wikipedia.org/wiki/9-slice_scaling).**
 
@@ -8,7 +8,7 @@ Nine-slice scaling is a common rendering technique used to scale images without 
 
 ![An image with simple rounded borders]()
 
-**With `nine-slice`:**
+**With `nine-slices`:**
 
 ![A scaled image with non-distorted borders and corners]()
 
@@ -20,7 +20,7 @@ Nine-slice scaling is a common rendering technique used to scale images without 
 
 ```
 use fast_image_resize::{images::Image, PixelType};
-use nine_slice::*;
+use nine_slices::*;
 
 // Define offsets from the edges of the source image.
 let offsets = BorderOffsets {
@@ -51,7 +51,7 @@ let _ = sprite.resize(1024, 768).unwrap();
 
 ## Pixel Types
 
-`nine-slice` can slice images with the following pixel types:
+`nine-slices` can slice images with the following pixel types:
 
 | Pixel type         | Slice | Read/write png | Read/write jpg |
 |--------------------|-------|----------------|----------------|
@@ -71,7 +71,7 @@ let _ = sprite.resize(1024, 768).unwrap();
 
 ## How it works
 
-100% genuine software rendering. `nine-slice` just does a lot of copy+pasting and resizing with in-memory raw bitmaps. Want to use a GPU instead? Try Bevy.
+100% genuine software rendering. `nine-slices` just does a lot of copy+pasting and resizing with in-memory raw bitmaps. Want to use a GPU instead? Try Bevy.
 
 ## Speed
 
@@ -79,4 +79,4 @@ Run `cargo bench --all-features` and find out.
 
 - By default, `BorderScaling::Stretch` and `BorderScaling::Repeat` are approximately the same speed.
 - When using `BorderScaling::Stretch`, you can set the resizing algorithm by calling `sprite.set_resize_algorithm(resize_algorithm)`. The default algorithm yields the highest quality but the worst performance. `ResizeAlg::Nearest` is the worst quality and best performance.
-- When using `BorderScaling::Stretch`, if a non-corner slice of the sprite is entirely one color, `nine-slice` will just set the output image's pixels to the appropriate color, rather than running any resize algorithm at all. This is faster than `ResizeAlg::Nearest` and it's on a per-slice basis. For example, if the top slice is a solid color and the other slices aren't, the top slice will be filled and every other slice will be resized and pasted onto the output image. 
+- When using `BorderScaling::Stretch`, if a non-corner slice of the sprite is entirely one color, `nine-slices` will just set the output image's pixels to the appropriate color, rather than running any resize algorithm at all. This is faster than `ResizeAlg::Nearest` and it's on a per-slice basis. For example, if the top slice is a solid color and the other slices aren't, the top slice will be filled and every other slice will be resized and pasted onto the output image. 
