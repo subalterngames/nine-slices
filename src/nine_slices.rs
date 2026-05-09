@@ -1,108 +1,106 @@
-use crate::{BorderOffsets, Rect};
-use blittle::{PositionU, Size};
+use crate::BorderOffsets;
+use blittle::{PositionU, RectU, Size};
 
 /// Nine slices of a sprite.
 pub struct NineSlices {
-    pub inner: Rect,
-    pub left: Rect,
-    pub top_left: Rect,
-    pub top: Rect,
-    pub top_right: Rect,
-    pub right: Rect,
-    pub bottom_right: Rect,
-    pub bottom: Rect,
-    pub bottom_left: Rect,
-    /// The size of the sprite.
-    pub size: Size,
+    pub inner: RectU,
+    pub left: RectU,
+    pub top_left: RectU,
+    pub top: RectU,
+    pub top_right: RectU,
+    pub right: RectU,
+    pub bottom_right: RectU,
+    pub bottom: RectU,
+    pub bottom_left: RectU,
 }
 
 impl NineSlices {
     pub const fn new(offsets: BorderOffsets, size: Size) -> Self {
-        let inner = Rect {
+        let inner = RectU {
             position: PositionU {
                 x: offsets.left,
                 y: offsets.top,
             },
             size: Size {
-                w: size.w - (offsets.left + offsets.right),
-                h: size.h - (offsets.top + offsets.bottom),
+                width: size.width - (offsets.left + offsets.right),
+                height: size.height - (offsets.top + offsets.bottom),
             },
         };
-        let left = Rect {
+        let left = RectU {
             position: PositionU {
                 x: 0,
                 y: offsets.top,
             },
             size: Size {
-                w: offsets.left,
-                h: size.h - (offsets.top + offsets.bottom),
+                width: offsets.left,
+                height: size.height - (offsets.top + offsets.bottom),
             },
         };
-        let top_left = Rect {
+        let top_left = RectU {
             position: PositionU { x: 0, y: 0 },
             size: Size {
-                w: offsets.left,
-                h: offsets.top,
+                width: offsets.left,
+                height: offsets.top,
             },
         };
-        let top = Rect {
+        let top = RectU {
             position: PositionU {
                 x: offsets.left,
                 y: 0,
             },
             size: Size {
-                w: size.w - (offsets.left + offsets.right),
-                h: offsets.top,
+                width: size.width - (offsets.left + offsets.right),
+                height: offsets.top,
             },
         };
-        let top_right = Rect {
+        let top_right = RectU {
             position: PositionU {
-                x: size.w - offsets.left,
+                x: size.width - offsets.left,
                 y: 0,
             },
             size: Size {
-                w: offsets.right,
-                h: offsets.top,
+                width: offsets.right,
+                height: offsets.top,
             },
         };
-        let right = Rect {
+        let right = RectU {
             position: PositionU {
-                x: size.w - offsets.right,
+                x: size.width - offsets.right,
                 y: offsets.top,
             },
             size: Size {
-                w: offsets.right,
-                h: size.h - (offsets.top + offsets.bottom),
+                width: offsets.right,
+                height: size.height - (offsets.top + offsets.bottom),
             },
         };
-        let bottom_right = Rect {
+        let bottom_right = RectU {
             position: PositionU {
-                x: size.w - offsets.right,
-                y: size.h - offsets.bottom,
+                x: size.width - offsets.right,
+                y: size.height - offsets.bottom,
             },
             size: Size {
-                w: offsets.right,
-                h: offsets.bottom,
+                width: offsets.right,
+                height: offsets.bottom,
             },
         };
-        let bottom = Rect {
+        let bottom = RectU {
             position: PositionU {
                 x: offsets.left,
-                y: size.h - offsets.bottom,
+                y: size.height - offsets.bottom,
             },
             size: Size {
-                w: size.w - (offsets.left + offsets.right),
-                h: offsets.bottom,
+                width: size.width - (offsets.left + offsets.right),
+                height: offsets.bottom,
             },
         };
-        let bottom_left = Rect {
+        let bottom_left = RectU {
             position: PositionU {
                 x: 0,
-                y: size.h - offsets.bottom,
+                y: size.height - offsets.bottom,
             },
             size: Size {
-                w: offsets.left,
-                h: offsets.bottom,
+                width: offsets.left,
+                height: offsets.bottom,
             },
         };
         Self {
@@ -115,7 +113,6 @@ impl NineSlices {
             bottom_right,
             bottom,
             bottom_left,
-            size,
         }
     }
 }
@@ -138,20 +135,35 @@ mod tests {
             right: RIGHT,
             bottom: BOTTOM,
         }
-        .into_slices(Size { w: D, h: D })
+        .into_slices(Size {
+            width: D,
+            height: D,
+        })
         .unwrap();
         assert_eq!(slices.top_left.position, PositionU::default());
-        assert_eq!(slices.top_left.size, Size { w: LEFT, h: TOP });
+        assert_eq!(
+            slices.top_left.size,
+            Size {
+                width: LEFT,
+                height: TOP
+            }
+        );
         assert_eq!(slices.top.position, PositionU { x: LEFT, y: 0 });
         assert_eq!(
             slices.top.size,
             Size {
-                w: D - LEFT - RIGHT,
-                h: TOP
+                width: D - LEFT - RIGHT,
+                height: TOP
             }
         );
         assert_eq!(slices.top_right.position, PositionU { x: D - LEFT, y: 0 });
-        assert_eq!(slices.top_right.size, Size { w: RIGHT, h: TOP });
+        assert_eq!(
+            slices.top_right.size,
+            Size {
+                width: RIGHT,
+                height: TOP
+            }
+        );
         assert_eq!(
             slices.right.position,
             PositionU {
@@ -162,52 +174,58 @@ mod tests {
         assert_eq!(
             slices.right.size,
             Size {
-                w: RIGHT,
-                h: D - TOP - BOTTOM
+                width: RIGHT,
+                height: D - TOP - BOTTOM
             }
         );
         assert_eq!(
             slices.bottom_right.position,
             PositionU {
                 x: D - RIGHT,
-                y: D - BOTTOM
+                y: D - BOTTOM,
             }
         );
         assert_eq!(
             slices.right.size,
             Size {
-                w: RIGHT,
-                h: D - TOP - BOTTOM
+                width: RIGHT,
+                height: D - TOP - BOTTOM
             }
         );
         assert_eq!(
             slices.bottom.position,
             PositionU {
                 x: LEFT,
-                y: D - BOTTOM
+                y: D - BOTTOM,
             }
         );
         assert_eq!(
             slices.bottom.size,
             Size {
-                w: D - LEFT - RIGHT,
-                h: BOTTOM
+                width: D - LEFT - RIGHT,
+                height: BOTTOM
             }
         );
         assert_eq!(
             slices.bottom_left.position,
             PositionU {
                 x: 0,
-                y: D - BOTTOM
+                y: D - BOTTOM,
             }
         );
-        assert_eq!(slices.bottom_left.size, Size { w: LEFT, h: BOTTOM });
+        assert_eq!(
+            slices.bottom_left.size,
+            Size {
+                width: LEFT,
+                height: BOTTOM
+            }
+        );
         assert_eq!(slices.left.position, PositionU { x: 0, y: TOP });
         assert_eq!(
             slices.left.size,
             Size {
-                w: LEFT,
-                h: D - TOP - BOTTOM
+                width: LEFT,
+                height: D - TOP - BOTTOM
             }
         )
     }

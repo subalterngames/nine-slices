@@ -1,26 +1,23 @@
-use crate::Rect;
 use crate::nine_slices::NineSlices;
-use crate::pixel_color::PixelColor;
-use crate::pixel_type::PixelType;
-use blittle::PositionU;
+use blittle::{PositionU, RectU, Surface};
 
 /// Whether to fill a bitmap with a color or to resize a bitmap that has multiple colors.
-#[derive(Clone, Eq, PartialEq, Debug)]
-pub enum ResizeMethod {
+#[derive(Copy, Clone, PartialEq, Debug)]
+pub enum ResizeMethod<P: Copy + Clone + Sized + Default + PartialEq> {
     /// Do this if all pixels are the same.
-    Fill(PixelColor),
+    Fill(P),
     Resize,
 }
 
-impl ResizeMethod {
-    pub fn new(slice: &Rect, w: usize, pixel_type: &PixelType, src: &[u8]) -> Self {
+impl<P: Copy + Clone + Sized + Default + PartialEq> ResizeMethod<P> {
+    pub fn new<S: AsRef<[P]> + AsMut<[P]>>(slice: &RectU, surface: &Surface<'_, S, P>) -> Self {
         // The top-left pixel.
-        let color = PixelColor::at_position(slice.position, w, pixel_type, src);
+        let color = surface.get_pixel_unchecked(slice.position);
         // Are all pixels the same color?
-        let all = (slice.position.y..slice.position.y + slice.size.h).all(|y| {
-            (slice.position.x..slice.position.x + slice.size.w).all(|x| {
+        let all = (slice.position.y..slice.position.y + slice.size.height).all(|y| {
+            (slice.position.x..slice.position.x + slice.size.width).all(|x| {
                 // Get the color and match it.
-                color == PixelColor::at_position(PositionU { x, y }, w, pixel_type, src)
+                color == surface.get_pixel_unchecked(PositionU { x, y })
             })
         });
         if all { Self::Fill(color) } else { Self::Resize }
@@ -28,22 +25,25 @@ impl ResizeMethod {
 }
 
 /// Resize methods per slice.
-pub struct ResizeMethods {
-    pub left: ResizeMethod,
-    pub top: ResizeMethod,
-    pub right: ResizeMethod,
-    pub bottom: ResizeMethod,
-    pub inner: ResizeMethod,
+pub struct ResizeMethods<P: Copy + Clone + Sized + Default + PartialEq> {
+    pub left: ResizeMethod<P>,
+    pub top: ResizeMethod<P>,
+    pub right: ResizeMethod<P>,
+    pub bottom: ResizeMethod<P>,
+    pub inner: ResizeMethod<P>,
 }
 
-impl ResizeMethods {
-    pub fn new(slices: &NineSlices, w: usize, pixel_type: &PixelType, src: &[u8]) -> Self {
+impl<P: Copy + Clone + Sized + Default + PartialEq> ResizeMethods<P> {
+    pub fn new<S: AsRef<[P]> + AsMut<[P]>>(
+        slices: &NineSlices,
+        surface: &Surface<'_, S, P>,
+    ) -> Self {
         Self {
-            left: ResizeMethod::new(&slices.left, w, pixel_type, src),
-            top: ResizeMethod::new(&slices.top, w, pixel_type, src),
-            right: ResizeMethod::new(&slices.right, w, pixel_type, src),
-            bottom: ResizeMethod::new(&slices.bottom, w, pixel_type, src),
-            inner: ResizeMethod::new(&slices.inner, w, pixel_type, src),
+            left: ResizeMethod::new(&slices.left, surface),
+            top: ResizeMethod::new(&slices.top, surface),
+            right: ResizeMethod::new(&slices.right, surface),
+            bottom: ResizeMethod::new(&slices.bottom, surface),
+            inner: ResizeMethod::new(&slices.inner, surface),
         }
     }
 }
@@ -52,6 +52,8 @@ impl ResizeMethods {
 mod tests {
     use crate::resize_method::ResizeMethod;
     use crate::{BorderOffsets, BorderScaling, NineSlicedSprite};
+    use blittle::Rgb8Surface;
+    use blittle::png::Png;
     use std::io::Cursor;
 
     #[test]
@@ -63,61 +65,47 @@ mod tests {
             bottom: 32,
         };
 
-        let sprite = NineSlicedSprite::from_png(
-            Cursor::new(include_bytes!("../test_files/src/stretch.png")),
-            slices,
-            BorderScaling::Stretch,
-        )
-        .unwrap();
+        let surface =
+            Rgb8Surface::read_png(Cursor::new(include_bytes!("../test_files/src/stretch.png")))
+                .unwrap();
+
+        let surface = NineSlicedSprite::new(surface, slices, BorderScaling::Stretch).unwrap();
 
         for (i, slice) in [
-            &sprite.slices.left,
-            &sprite.slices.top,
-            &sprite.slices.right,
-            &sprite.slices.bottom,
+            &surface.slices.left,
+            &surface.slices.top,
+            &surface.slices.right,
+            &surface.slices.bottom,
         ]
         .into_iter()
         .enumerate()
         {
-            let method = ResizeMethod::new(
-                slice,
-                sprite.slices.size.w,
-                &sprite.pixel_type,
-                sprite.image.buffer(),
-            );
+            let method = ResizeMethod::new(slice, &surface.surface);
             debug_assert!(matches!(method, ResizeMethod::Fill(_)), "{i}");
         }
 
-        let method = ResizeMethod::new(
-            &sprite.slices.inner,
-            sprite.slices.size.w,
-            &sprite.pixel_type,
-            sprite.image.buffer(),
-        );
+        let method = ResizeMethod::new(&surface.slices.inner, &surface.surface);
         assert_eq!(method, ResizeMethod::Resize);
 
-        let sprite = NineSlicedSprite::from_png(
-            Cursor::new(include_bytes!("../test_files/src/repeat.png")),
+        let surface = NineSlicedSprite::new(
+            Rgb8Surface::read_png(Cursor::new(include_bytes!("../test_files/src/repeat.png")))
+                .unwrap(),
             slices,
             BorderScaling::Stretch,
         )
         .unwrap();
+
         for (i, slice) in [
-            &sprite.slices.left,
-            &sprite.slices.top,
-            &sprite.slices.right,
-            &sprite.slices.bottom,
-            &sprite.slices.inner,
+            &surface.slices.left,
+            &surface.slices.top,
+            &surface.slices.right,
+            &surface.slices.bottom,
+            &surface.slices.inner,
         ]
         .into_iter()
         .enumerate()
         {
-            let method = ResizeMethod::new(
-                slice,
-                sprite.slices.size.w,
-                &sprite.pixel_type,
-                sprite.image.buffer(),
-            );
+            let method = ResizeMethod::new(slice, &surface.surface);
             debug_assert_eq!(method, ResizeMethod::Resize, "{i}");
         }
     }

@@ -1,3 +1,5 @@
+use blittle::Rgb8Surface;
+use blittle::png::Png;
 use criterion::{Criterion, criterion_group, criterion_main};
 use fast_image_resize::ResizeAlg;
 use nine_slices::{BorderOffsets, BorderScaling, NineSlicedSprite};
@@ -11,53 +13,56 @@ fn criterion_benchmark(c: &mut Criterion) {
         bottom: 32,
     };
 
-    let mut sprite = NineSlicedSprite::from_png(
-        Cursor::new(include_bytes!("../test_files/src/stretch.png")),
+    let mut surface = NineSlicedSprite::new(
+        Rgb8Surface::read_png(Cursor::new(include_bytes!("../test_files/src/stretch.png")))
+            .unwrap(),
         slices,
         BorderScaling::Stretch,
     )
     .unwrap();
     c.bench_function("stretched borders", |b| {
         b.iter(|| {
-            let _ = sprite.resize(1024, 768).unwrap();
+            let _ = surface.resize(1024, 768).unwrap();
         })
     });
 
-    let mut sprite = NineSlicedSprite::from_png(
-        Cursor::new(include_bytes!("../test_files/src/stretch.png")),
+    let mut surface = NineSlicedSprite::new(
+        Rgb8Surface::read_png(Cursor::new(include_bytes!("../test_files/src/stretch.png")))
+            .unwrap(),
         slices,
         BorderScaling::Stretch,
     )
     .unwrap();
-    sprite.set_resize_algorithm(ResizeAlg::Nearest);
+    surface.set_resize_algorithm(ResizeAlg::Nearest);
     c.bench_function("stretched borders nearest", |b| {
         b.iter(|| {
-            let _ = sprite.resize(1024, 768).unwrap();
+            let _ = surface.resize(1024, 768).unwrap();
         })
     });
 
-    let mut sprite = NineSlicedSprite::from_png(
-        Cursor::new(include_bytes!("../test_files/src/solid.png")),
+    let mut surface = NineSlicedSprite::new(
+        Rgb8Surface::read_png(Cursor::new(include_bytes!("../test_files/src/stretch.png")))
+            .unwrap(),
         slices,
         BorderScaling::Stretch,
     )
     .unwrap();
-    sprite.set_resize_algorithm(ResizeAlg::Nearest);
+    surface.set_resize_algorithm(ResizeAlg::Nearest);
     c.bench_function("stretched borders filled", |b| {
         b.iter(|| {
-            let _ = sprite.resize(1024, 768).unwrap();
+            let _ = surface.resize(1024, 768).unwrap();
         })
     });
 
-    let mut sprite = NineSlicedSprite::from_png(
-        Cursor::new(include_bytes!("../test_files/src/repeat.png")),
+    let mut surface = NineSlicedSprite::new(
+        Rgb8Surface::read_png(Cursor::new(include_bytes!("../test_files/src/repeat.png"))).unwrap(),
         slices,
         BorderScaling::Repeat,
     )
     .unwrap();
     c.bench_function("repeated borders", |b| {
         b.iter(|| {
-            let _ = sprite.resize(1024, 768).unwrap();
+            let _ = surface.resize(1024, 768).unwrap();
         })
     });
 }
