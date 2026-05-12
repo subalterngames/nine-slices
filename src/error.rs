@@ -5,8 +5,8 @@ use thiserror::Error;
 pub enum Error {
     #[error("Invalid borders: {:?}", 0)]
     InvalidSlices(BorderOffsets),
-    #[error("Failed to view destination image from a slice: {0}")]
-    FromSlice(fast_image_resize::ImageBufferError),
+    #[error("Failed to view destination image from a surface: {0}")]
+    FromSurface(fast_image_resize::ImageBufferError),
     #[error("Failed to crop destination image: {0}")]
     Crop(fast_image_resize::CropBoxError),
     #[error("Failed to resize inner area: {0}")]

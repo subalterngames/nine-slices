@@ -48,7 +48,7 @@ impl<
     P: Copy + Clone + Sized + Default + PartialEq + Zeroable + Pod + ResizablePixel,
 > NineSlicedSprite<'s, S, P>
 {
-    /// Slice `image` into a 3x3 grid using `offsets`.
+    /// Slice `surface` into a 3x3 grid using `offsets`.
     pub fn new(
         surface: Surface<'s, S, P>,
         offsets: BorderOffsets,
@@ -68,13 +68,13 @@ impl<
 
     /// Set the resize algorithm.
     ///
-    /// The default algorithm is Lanczos3, which is slow but results in a high-quality resized image.
+    /// The default algorithm is Lanczos3, which is slow but high-quality.
     /// The fastest option, with the worst quality, is `ResizeAlg::Nearest`.
     pub const fn set_resize_algorithm(&mut self, resize_algorithm: ResizeAlg) {
         self.resize_algorithm = resize_algorithm;
     }
 
-    /// Resize the sprite to dimensions `(width, height)`.
+    /// Resize the surface to dimensions `(width, height)`.
     pub fn resize(&mut self, width: u32, height: u32) -> Result<Surface<'s, Vec<P>, P>, Error> {
         let dst_size = Size {
             width: width as usize,
@@ -113,11 +113,12 @@ impl<
         Ok(dst)
     }
 
+    /// Drop `self` and return the original `Surface`
     pub fn finish(self) -> Surface<'s, S, P> {
         self.surface
     }
 
-    /// Blit an area of `src` defined by `src_rect` to `dst`.
+    /// Blit an `area` of `self.surface` to `dst` at `position`
     fn blit(
         &mut self,
         position: PositionU,
@@ -131,6 +132,7 @@ impl<
         self.surface.blit(dst)
     }
 
+    /// Blit the four corners.
     fn blit_corners(&mut self, dst: &mut Surface<'s, Vec<P>, P>) -> Result<(), blittle::Error> {
         let dst_size = dst.get_size();
         self.blit(self.slices.top_left.position, self.slices.top_left, dst)?;
@@ -160,6 +162,7 @@ impl<
         )
     }
 
+    /// Resize an `area` of `self.surface` then blit it to `dst` at `position`
     fn resize_and_blit(
         &mut self,
         position: PositionU,
@@ -215,7 +218,7 @@ impl<
             self.surface.bytes_mut(),
             pixel_type,
         )
-        .map_err(Error::FromSlice)?;
+        .map_err(Error::FromSurface)?;
         // Get an image referencing the buffer.
         let mut dst = Image::from_slice_u8(
             dst_size.width as u32,
@@ -223,7 +226,7 @@ impl<
             dst.bytes_mut(),
             pixel_type,
         )
-        .map_err(Error::FromSlice)?;
+        .map_err(Error::FromSurface)?;
         // The resized image is a cropped view of the destination image.
         let mut resized = CroppedImageMut::new(
             &mut dst,
@@ -249,7 +252,6 @@ impl<
     }
 
     /// Resize the borders by stretching them.
-    /// `width` and `height` are the dimensions of `dst`.
     fn stretch_borders(&mut self, dst: &mut Surface<'s, Vec<P>, P>) -> Result<(), Error> {
         let total_dst_size = dst.get_size();
 
@@ -311,8 +313,7 @@ impl<
         Ok(())
     }
 
-    // Resize by repeatedly blitting the source bitmap's borders.
-    // `width` and `height` are the dimensions of `dst`.
+    /// Resize by repeatedly blitting the source bitmap's borders.
     fn repeat_borders(&mut self, dst: &mut Surface<'s, Vec<P>, P>) {
         let dst_size = dst.get_size();
         let border_w =
@@ -349,13 +350,12 @@ impl<
     ///
     /// - `src_rect` is the size of the source slice.
     /// - `dst_position` is the position of the edge on the `dst` bitmap.
-    /// - `border_w` is the width of the resized border.
-    /// - `dst_w` is the width of `dst`.
+    /// - `border_width` is the width of the resized border.
     fn repeat_horizontal(
         &self,
         position: PositionU,
         src_rect: RectU,
-        edge_w: usize,
+        border_width: usize,
         dst: &mut Surface<'s, Vec<P>, P>,
     ) {
         // Rows.
@@ -368,7 +368,7 @@ impl<
             let dst_y = position.y + y;
             // The destination slice's start and end indices.
             let d0 = dst.get_index(position.x, dst_y);
-            let d1 = dst.get_index(position.x + edge_w, dst_y);
+            let d1 = dst.get_index(position.x + border_width, dst_y);
             // Blit slices of `src` onto chunks of `dst`.
             dst.buffer_mut()[d0..d1]
                 .chunks_mut(src_rect.size.width)
@@ -382,8 +382,7 @@ impl<
     ///
     /// - `src_rect` is the size of the source slice.
     /// - `dst_position` is the position of the edge on the `dst` bitmap.
-    /// - `border_h` is the width of the resized border.
-    /// - `dst_w` is the width of `dst`.
+    /// - `border_height` is the height of `dst`.
     fn repeat_vertical(
         &self,
         position: PositionU,

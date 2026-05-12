@@ -1,5 +1,6 @@
 use fast_image_resize::PixelType;
 
+/// Used internal to get a `PixelType` from a pixel.
 pub trait ResizablePixel {
     fn get_pixel_type() -> PixelType;
 }
