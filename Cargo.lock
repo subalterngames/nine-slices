@@ -65,6 +65,8 @@ checksum = "812e12b5285cc515a9c72a5c1d3b6d46a19dac5acfef5265968c166106e31dd3"
 [[package]]
 name = "blittle"
 version = "0.7.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "845a5f5bd7b49319bb7d680e9c44e4d0ce8d78e5a63b91401918e975e417997a"
 dependencies = [
  "bytemuck",
  "paste",
