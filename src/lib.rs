@@ -13,17 +13,20 @@ mod resizable;
 mod resize_method;
 
 use crate::resize_method::ResizeMethod;
+pub use blittle;
 use blittle::*;
 pub use border_offsets::BorderOffsets;
 pub use border_scaling::BorderScaling;
 use bytemuck::{Pod, Zeroable};
 pub use error::Error;
-use fast_image_resize::{ResizeOptions, Resizer, images::{CroppedImageMut, Image}};
 pub use fast_image_resize::ResizeAlg;
+use fast_image_resize::{
+    ResizeOptions, Resizer,
+    images::{CroppedImageMut, Image},
+};
 use nine_slices::NineSlices;
 pub use resizable::ResizablePixel;
 use resize_method::ResizeMethods;
-pub use blittle;
 
 /// A sprite sliced into a 3x3 grid that can be resized without distorting the corners.
 pub struct NineSlicedSprite<
@@ -100,15 +103,12 @@ impl<
             },
             &mut dst,
         )?;
-        println!("inner");
 
         // Resize the borders.
         match &self.border_scaling {
-            BorderScaling::Stretch => self.stretch_borders(width, height, &mut dst)?,
-            BorderScaling::Repeat => self.repeat_borders(width, height, &mut dst),
+            BorderScaling::Stretch => self.stretch_borders(&mut dst)?,
+            BorderScaling::Repeat => self.repeat_borders(&mut dst),
         }
-
-        println!("borders");
 
         Ok(dst)
     }
@@ -178,9 +178,9 @@ impl<
             ResizeMethod::Fill(color) => {
                 let dst_size = dst.get_size();
                 let x0 = position.x;
-                let x1 = (x0 + area.size.width).min(dst_size.width);
+                let x1 = (x0 + resize_to.width).min(dst_size.width);
                 let y0 = position.y;
-                let y1 = (y0 + area.size.height).min(dst_size.height);
+                let y1 = (y0 + resize_to.height).min(dst_size.height);
                 for y in y0..y1 {
                     let i0 = dst.get_index(x0, y);
                     let i1 = dst.get_index(x1, y);
@@ -250,16 +250,8 @@ impl<
 
     /// Resize the borders by stretching them.
     /// `width` and `height` are the dimensions of `dst`.
-    fn stretch_borders(
-        &mut self,
-        width: u32,
-        height: u32,
-        dst: &mut Surface<'s, Vec<P>, P>,
-    ) -> Result<(), Error> {
-        let total_dst_size = Size {
-            width: width as usize,
-            height: height as usize,
-        };
+    fn stretch_borders(&mut self, dst: &mut Surface<'s, Vec<P>, P>) -> Result<(), Error> {
+        let total_dst_size = dst.get_size();
 
         let width =
             total_dst_size.width - (self.slices.left.size.width + self.slices.right.size.width);
@@ -321,12 +313,12 @@ impl<
 
     // Resize by repeatedly blitting the source bitmap's borders.
     // `width` and `height` are the dimensions of `dst`.
-    fn repeat_borders(&mut self, width: u32, height: u32, dst: &mut Surface<'s, Vec<P>, P>) {
-        let dst_w = width as usize;
-        let dst_h = height as usize;
-        let border_w = dst_w - (self.slices.top_left.size.width + self.slices.top_right.size.width);
-        let border_h =
-            dst_h - (self.slices.top_left.size.height + self.slices.top_right.size.height);
+    fn repeat_borders(&mut self, dst: &mut Surface<'s, Vec<P>, P>) {
+        let dst_size = dst.get_size();
+        let border_w =
+            dst_size.width - (self.slices.top_left.size.width + self.slices.top_right.size.width);
+        let border_h = dst_size.height
+            - (self.slices.top_left.size.height + self.slices.top_right.size.height);
         // Left.
         self.repeat_vertical(self.slices.left.position, self.slices.left, border_h, dst);
         // Top.
@@ -334,7 +326,7 @@ impl<
         // Right.
         self.repeat_vertical(
             PositionU {
-                x: dst_w - self.slices.right.size.width,
+                x: dst_size.width - self.slices.right.size.width,
                 y: self.slices.right.position.y,
             },
             self.slices.right,
@@ -345,7 +337,7 @@ impl<
         self.repeat_horizontal(
             PositionU {
                 x: self.slices.bottom.position.x,
-                y: dst_h - self.slices.bottom.size.height,
+                y: dst_size.height - self.slices.bottom.size.height,
             },
             self.slices.bottom,
             border_w,

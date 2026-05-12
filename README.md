@@ -38,37 +38,17 @@ let raw_bitmap = include_bytes!("../test_files/src/example.raw").to_vec();
 let size = Size { width: 64, height: 64 };
 // Load a surface from a raw bitmap.
 let surface = Rgb8Surface::new_from_bitmap(size, raw_bitmap).unwrap();
-// Slice the image.
+// Slice the surface.
 let mut sprite = NineSlicedSprite::new(surface, offsets, BorderScaling::Repeat).unwrap();
 
-// Create a resized image.
+// Create a resized surface.
 let _ = sprite.resize(1024, 768).unwrap();
 ```
 
 ## Feature flags
 
-- `png` to add read/write functions for .png files
-- `jpg` to add read/write functions for .jpg files
-
-## Pixel Types
-
-`nine-slices` can slice images with the following pixel types:
-
-| Pixel type         | Slice | Read/write png | Read/write jpg |
-|--------------------|-------|----------------|----------------|
-| `PixelType::U8`    | Yes   | Yes            | Yes            |
-| `PixelType::U8x2`  | Yes   | Yes            | No             |
-| `PixelType::U8x3`  | Yes   | Yes            | Yes            |
-| `PixelType::U8x4`  | Yes   | Yes            | No             |
-| `PixelType::U16`   | No    | No             | No             |
-| `PixelType::U16x2` | No    | No             | No             |
-| `PixelType::U16x3` | No    | No             | No             |
-| `PixelType::U16x4` | No    | No             | No             |
-| `PixelType::I32`   | No    | No             | No             |
-| `PixelType::F32`   | Yes   | No             | No             |
-| `PixelType::F32x2` | No    | No             | No             |
-| `PixelType::F32x3` | Yes   | No             | No             |
-| `PixelType::F32x4` | Yes   | No             | No             |
+- `png` to expose blittle's `png` feature (read and write pngs)
+- `softbuffer` to expose blittle's `softbuffer` feature
 
 ## How it works
 

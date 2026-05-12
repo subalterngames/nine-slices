@@ -70,25 +70,25 @@ mod tests {
             Rgba8Surface::read_png(Cursor::new(include_bytes!("../test_files/src/stretch.png")))
                 .unwrap();
 
-        let surface = NineSlicedSprite::new(surface, slices, BorderScaling::Stretch).unwrap();
+        let sprite = NineSlicedSprite::new(surface, slices, BorderScaling::Stretch).unwrap();
 
         for (i, slice) in [
-            &surface.slices.left,
-            &surface.slices.top,
-            &surface.slices.right,
-            &surface.slices.bottom,
+            &sprite.slices.left,
+            &sprite.slices.top,
+            &sprite.slices.right,
+            &sprite.slices.bottom,
         ]
         .into_iter()
         .enumerate()
         {
-            let method = ResizeMethod::new(slice, &surface.surface);
+            let method = ResizeMethod::new(slice, &sprite.surface);
             debug_assert!(matches!(method, ResizeMethod::Fill(_)), "{i}");
         }
 
-        let method = ResizeMethod::new(&surface.slices.inner, &surface.surface);
+        let method = ResizeMethod::new(&sprite.slices.inner, &sprite.surface);
         assert_eq!(method, ResizeMethod::Resize);
 
-        let surface = NineSlicedSprite::new(
+        let sprite = NineSlicedSprite::new(
             Rgba8Surface::read_png(Cursor::new(include_bytes!("../test_files/src/repeat.png")))
                 .unwrap(),
             slices,
@@ -97,16 +97,16 @@ mod tests {
         .unwrap();
 
         for (i, slice) in [
-            &surface.slices.left,
-            &surface.slices.top,
-            &surface.slices.right,
-            &surface.slices.bottom,
-            &surface.slices.inner,
+            &sprite.slices.left,
+            &sprite.slices.top,
+            &sprite.slices.right,
+            &sprite.slices.bottom,
+            &sprite.slices.inner,
         ]
         .into_iter()
         .enumerate()
         {
-            let method = ResizeMethod::new(slice, &surface.surface);
+            let method = ResizeMethod::new(slice, &sprite.surface);
             debug_assert_eq!(method, ResizeMethod::Resize, "{i}");
         }
     }
