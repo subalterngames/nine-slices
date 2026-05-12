@@ -48,11 +48,12 @@ impl<P: Copy + Clone + Sized + Default + PartialEq> ResizeMethods<P> {
     }
 }
 
+#[cfg(feature = "png")]
 #[cfg(test)]
 mod tests {
     use crate::resize_method::ResizeMethod;
     use crate::{BorderOffsets, BorderScaling, NineSlicedSprite};
-    use blittle::Rgb8Surface;
+    use blittle::Rgba8Surface;
     use blittle::png::Png;
     use std::io::Cursor;
 
@@ -66,7 +67,7 @@ mod tests {
         };
 
         let surface =
-            Rgb8Surface::read_png(Cursor::new(include_bytes!("../test_files/src/stretch.png")))
+            Rgba8Surface::read_png(Cursor::new(include_bytes!("../test_files/src/stretch.png")))
                 .unwrap();
 
         let surface = NineSlicedSprite::new(surface, slices, BorderScaling::Stretch).unwrap();
@@ -88,7 +89,7 @@ mod tests {
         assert_eq!(method, ResizeMethod::Resize);
 
         let surface = NineSlicedSprite::new(
-            Rgb8Surface::read_png(Cursor::new(include_bytes!("../test_files/src/repeat.png")))
+            Rgba8Surface::read_png(Cursor::new(include_bytes!("../test_files/src/repeat.png")))
                 .unwrap(),
             slices,
             BorderScaling::Stretch,

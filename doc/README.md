@@ -19,8 +19,8 @@ Nine-slice scaling is a common rendering technique used to scale images without 
 ## Example usage
 
 ```
-use fast_image_resize::{images::Image, PixelType};
 use nine_slices::*;
+use nine_slices::blittle::*;
 
 // Define offsets from the edges of the source image.
 let offsets = BorderOffsets {
@@ -32,13 +32,14 @@ let offsets = BorderOffsets {
 
 // Load a raw bitmap.
 // For png and jpg files, enable their respective feature flags.
-let src = include_bytes!("../test_files/src/example.raw").to_vec();
-// Three channels, one byte per channel (RGB8).
-let pixel_type = PixelType::U8x3;
-// Convert to an Image.
-let image = Image::from_vec_u8(64, 64, src, pixel_type).unwrap();
+let raw_bitmap = include_bytes!("../test_files/src/example.raw").to_vec();
+// Cast to [u8; 3]
+// The known size of the source bitmap.
+let size = Size { width: 64, height: 64 };
+// Load a surface from a raw bitmap.
+let surface = Rgb8Surface::new_from_bitmap(size, raw_bitmap).unwrap();
 // Slice the image.
-let mut sprite = NineSlicedSprite::new(image, offsets, BorderScaling::Repeat).unwrap();
+let mut sprite = NineSlicedSprite::new(surface, offsets, BorderScaling::Repeat).unwrap();
 
 // Create a resized image.
 let _ = sprite.resize(1024, 768).unwrap();

@@ -18,12 +18,12 @@ pub use border_offsets::BorderOffsets;
 pub use border_scaling::BorderScaling;
 use bytemuck::{Pod, Zeroable};
 pub use error::Error;
-pub use fast_image_resize;
-use fast_image_resize::images::CroppedImageMut;
-use fast_image_resize::{ResizeAlg, ResizeOptions, Resizer, images::Image};
+use fast_image_resize::{ResizeOptions, Resizer, images::{CroppedImageMut, Image}};
+pub use fast_image_resize::ResizeAlg;
 use nine_slices::NineSlices;
 pub use resizable::ResizablePixel;
 use resize_method::ResizeMethods;
+pub use blittle;
 
 /// A sprite sliced into a 3x3 grid that can be resized without distorting the corners.
 pub struct NineSlicedSprite<
@@ -79,7 +79,7 @@ impl<
         };
 
         // Create a new empty image.
-        let mut dst = Surface::new_from_slice(dst_size);
+        let mut dst = Surface::new(dst_size);
 
         // Blit corners.
         self.blit_corners(&mut dst).map_err(Error::Blittle)?;
@@ -100,12 +100,15 @@ impl<
             },
             &mut dst,
         )?;
+        println!("inner");
 
         // Resize the borders.
         match &self.border_scaling {
             BorderScaling::Stretch => self.stretch_borders(width, height, &mut dst)?,
             BorderScaling::Repeat => self.repeat_borders(width, height, &mut dst),
         }
+
+        println!("borders");
 
         Ok(dst)
     }
