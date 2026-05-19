@@ -6,6 +6,7 @@ description = "Scale images using nine-slice scaling"
 authors = ["Esther Alter <alters@mit.edu>"]
 keywords = ["graphics", "image", "resize", "sprite", "gamedev"]
 categories = ["game-development", "multimedia::images"]
+license-file = "LICENSE"
 
 [dependencies]
 blittle = { version = "0.7.3", features = ["bytes", "std"] }
