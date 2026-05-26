@@ -409,6 +409,45 @@ impl<
     }
 }
 
+/// Resize `surface` without applying 9-slicing.
+pub fn resize<
+    's,
+    S: AsRef<[P]> + AsMut<[P]>,
+    P: Copy + Clone + Sized + Default + PartialEq + Zeroable + Pod + ResizablePixel,
+>(
+    surface: &mut Surface<'s, S, P>,
+    size: Size,
+    resize_algorithm: ResizeAlg,
+) -> Result<Surface<'s, Vec<P>, P>, Error> {
+    let src_size = surface.get_size();
+    let pixel_type = P::get_pixel_type();
+    let src = Image::from_slice_u8(
+        src_size.width as u32,
+        src_size.height as u32,
+        surface.bytes_mut(),
+        pixel_type,
+    )
+    .map_err(Error::FromSurface)?;
+    let mut dst = Surface::new(size);
+    // Get an image referencing the buffer.
+    let mut dst_image = Image::from_slice_u8(
+        size.width as u32,
+        size.height as u32,
+        dst.bytes_mut(),
+        pixel_type,
+    )
+    .map_err(Error::FromSurface)?;
+
+    Resizer::new()
+        .resize(
+            &src,
+            &mut dst_image,
+            Some(&ResizeOptions::new().resize_alg(resize_algorithm)),
+        )
+        .map_err(Error::Resize)?;
+    Ok(dst)
+}
+
 #[cfg(feature = "png")]
 #[cfg(test)]
 mod tests {

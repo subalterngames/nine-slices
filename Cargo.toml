@@ -1,6 +1,6 @@
 [package]
 name = "nine-slices"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 description = "Scale images using nine-slice scaling"
 authors = ["Esther Alter <alters@mit.edu>"]
