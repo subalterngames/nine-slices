@@ -64,9 +64,9 @@ checksum = "812e12b5285cc515a9c72a5c1d3b6d46a19dac5acfef5265968c166106e31dd3"
 
 [[package]]
 name = "blittle"
-version = "0.7.5"
+version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "acea8ca05fce96c0aba0ca5368955d7575a19a8899e59d41afff6fd2e5202ab7"
+checksum = "780400533fab7ac4653d4d3325f3c6ef06f712ad79d17cba68999b654749aa4d"
 dependencies = [
  "bytemuck",
  "paste",
@@ -604,7 +604,7 @@ dependencies = [
 
 [[package]]
 name = "nine-slices"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "blittle",
  "bytemuck",
